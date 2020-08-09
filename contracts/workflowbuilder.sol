@@ -11,11 +11,6 @@ enum WFRights {
 }
 
 contract WorkflowBuilder {
-
-    uint32 constant STATE_END_OK    = 0x80000000;
-    uint32 constant STATE_END_ABORT = 0x80000001;
-    uint32 constant STATE_INVALID   = 0xFFFFFFFF;
-
     uint32[][] public states;
     mapping(uint256 => uint256[]) public rights;
 
@@ -37,23 +32,47 @@ contract WorkflowBuilder {
 
     function doFinalize() external {
         require(owner == msg.sender, "Unauthorized");
+
+        //Basic state engine validation. 
+        //Make sure all edges refer to a valid End State
+        uint uTotStates = states.length;
+        for(uint uStates = 0; uStates < uTotStates; ++uStates) {
+            uint32[] storage edges = states[uStates];
+            uint uTotEdges = edges.length;
+
+            for(uint uEdges = 0; uEdges < uTotEdges; ++uEdges) {
+                uint endState = edges[uEdges];
+                require(endState != 0,"Edge cannot point to State Zero");
+                require(endState < uTotStates,"Edge points to non-existing State");
+            }
+        }
+
         finalized = true;
     }
 
     function addRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
+        require(finalized, "Workflow is not final");
         require(owner == msg.sender, "Unauthorized");
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
+        require(isValidRight(stateid,states[stateid][edgeid],right), "Right not allowed for this edge");
 
         uint256 rightKey = makeRightsKey(stateid,edgeid);
         uint256 rigthVal = makeRightsValue(user, right);
 
         uint256[] storage edgeRights = rights[rightKey];
+
+        if (edgeRights.length > 0) {
+            WFRights right0 = WFRights(edgeRights[0] >> 160);
+            require(right == right0, "Inconsistent rights");
+        }
+
         edgeRights.push(rigthVal);
         ++usn;
     }
 
     function removeRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
+        require(finalized, "Workflow is not final");
         require(owner == msg.sender, "Unauthorized");
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
@@ -99,22 +118,24 @@ contract WorkflowBuilder {
         return uint32(rights[rightKey].length);
     }
 
-    function hasRight(uint32 stateid, address user, WFRights right) external view returns (uint32) {
-        require(stateid < states.length, "Non-existing state");
+    function hasRight(uint32 state1, uint32 state2, address user, WFRights right) external view returns (bool) {
+        require(state1 < states.length, "Non-existing state");
+        require(state2 < states.length, "Non-existing state");
 
         uint rigthVal = makeRightsValue(user, right);
+        for (uint32 uECnt = 0; uECnt < states[state1].length; ++uECnt) {
 
-        for (uint32 uECnt = 0; uECnt < states[stateid].length; ++uECnt) {
+            if (states[state1][uECnt] != state2)
+                continue;
 
-            uint rightKey = makeRightsKey(stateid,uECnt);
-
+            uint rightKey = makeRightsKey(state1,uECnt);
             for (uint32 uRCnt = 0; uRCnt < rights[rightKey].length; ++uRCnt) {
                 if (rights[rightKey][uRCnt] == rigthVal)
-                    return states[stateid][uECnt];
+                    return true;
             }
         }
 
-        return STATE_INVALID;
+        return false;
     }
 
     function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) public view returns(address user, WFRights right) {
@@ -135,5 +156,32 @@ contract WorkflowBuilder {
 
     function makeRightsValue(address user, WFRights right) public pure returns(uint256) {
        return (uint256(right)<<160) | uint256(user);
+    }
+
+    function isValidRight(uint32 state1, uint32 state2, WFRights right) private view returns(bool) {
+        //INIT is only allowed for S0
+        if (right == WFRights.INIT) {
+            return (state1 == 0) && (state1 != state2);
+        }
+        //APPROVE cannot connect from S0 and 
+        // MUST cause a transition between states
+        // MUST NOT End in a state that has no edges
+        else if (right == WFRights.APPROVE) {
+            return (state1 != 0) && (state1 != state2) && (states[state2].length > 0);
+        }
+        //REVIEW cannot connect from S0 and 
+        // MUST NOT cause a transition between states
+        else if (right == WFRights.REVIEW) {
+            return (state1 != 0) && (state1 == state2);
+        }
+        //SIGNOFF, ABORT cannot connect from S0 and 
+        // MUST cause a transition between states
+        // MUST end in a state that has no edges
+        else if ((right == WFRights.SIGNOFF) ||
+                 (right == WFRights.ABORT)) {
+            return (state1 != 0) && (state1 != state2) && (states[state2].length == 0);
+        }
+
+        return false;
     }
 }
