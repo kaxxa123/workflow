@@ -2,26 +2,37 @@ pragma solidity ^0.6.0;
 
 import "./Interfaces.sol";
 
-enum WFRights {
-    INIT,       // Start Workflow by submitting 1st document set version
-    APPROVE,    // Approve the current document set version
-    REVIEW,     // Submit an updated document set
-    SIGNOFF,    // Conclude workflow successfully
-    ABORT       // Abort workflow
-}
+/// @title A contract to build & manage a state engine
+/// @author Alexander Zammit
+contract WorkflowBuilder is IStateEngine {
 
-contract WorkflowBuilder {
+    //All States/Edges are stored as an array of arrays
+    //Such that: states[InitialState][EdgeIdx] = EndState
     uint32[][] public states;
+
+    //For each edge we store an array of rights
+    //Key = <initial state><edge index>
+    //Value = Array of Rights - [<right><address>]
     mapping(uint256 => uint256[]) public rights;
 
+    //Universal Sequence Number allowing us to quickly see if the WF changed
     uint256 public  usn;
+
+    //Is WF structure final?
+    //true  - all states/edges are defined
+    //false - more states/edges can be added
     bool    public  finalized;
+
+    //The only account allowed to edit this WF
     address private owner;
 
+    /// @dev Initializes WorkflowBuilder
     constructor() public {
         owner = msg.sender;
     }
 
+    /// @dev Append a new state.
+    /// @param edges an array of edges identifying the set of connected state
     function addState(uint32[] memory edges) public {
         require(owner == msg.sender, "Unauthorized");
         require(!finalized, "Workflow is final");
@@ -30,6 +41,7 @@ contract WorkflowBuilder {
         ++usn;
     }
 
+    /// @dev Mark state engine structure as final
     function doFinalize() external {
         require(owner == msg.sender, "Unauthorized");
 
@@ -50,6 +62,11 @@ contract WorkflowBuilder {
         finalized = true;
     }
 
+    /// @dev Add Right to an Edge
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param edgeid edge index. This matches the array of edges fed to addState
+    /// @param user address of user to whom the right is being assigned
+    /// @param right the right being assigned
     function addRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
         require(finalized, "Workflow is not final");
         require(owner == msg.sender, "Unauthorized");
@@ -71,6 +88,11 @@ contract WorkflowBuilder {
         ++usn;
     }
 
+    /// @dev Revoke Right from an Edge
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param edgeid edge index. This matches the array of edges fed to addState
+    /// @param user address of user whose right is being revoked
+    /// @param right the right being revoked
     function removeRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
         require(finalized, "Workflow is not final");
         require(owner == msg.sender, "Unauthorized");
@@ -101,16 +123,25 @@ contract WorkflowBuilder {
         revert("User/Right not found");        
     }
 
-    function getTotalStates() external view returns (uint32) {
+    /// @dev Get total defined states
+    /// @return total states
+    function getTotalStates() override external view returns (uint32) {
         return uint32(states.length);
     }
 
-    function getTotalEdges(uint32 stateid) external view returns (uint32) {
+    /// @dev Get total edges coming out from a given state
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @return total edges for given state
+    function getTotalEdges(uint32 stateid) override external view returns (uint32) {
         require(stateid < states.length, "Non-existing state");
         return uint32(states[stateid].length);
     }
 
-    function getTotalRights(uint32 stateid, uint32 edgeid) external view returns (uint32) {
+    /// @dev Get total rights assigned to a given edge
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param edgeid edge index. This matches the array of edges fed to addState
+    /// @return total rights for given edge
+    function getTotalRights(uint32 stateid, uint32 edgeid) override external view returns (uint32) {
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
 
@@ -118,7 +149,13 @@ contract WorkflowBuilder {
         return uint32(rights[rightKey].length);
     }
 
-    function hasRight(uint32 state1, uint32 state2, address user, WFRights right) external view returns (bool) {
+    /// @dev Query if edge includes specified right
+    /// @param state1 state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param state2 index of state connected to state1
+    /// @param user address of user whose right is being queried
+    /// @param right right being queried
+    /// @return true if right is present, false otherwise
+    function hasRight(uint32 state1, uint32 state2, address user, WFRights right) override external view returns (bool) {
         require(state1 < states.length, "Non-existing state");
         require(state2 < states.length, "Non-existing state");
 
@@ -138,7 +175,14 @@ contract WorkflowBuilder {
         return false;
     }
 
-    function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) public view returns(address user, WFRights right) {
+    /// @dev Query right settings for a given right index under a given edge
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param edgeid edge index. This matches the array of edges fed to addState
+    /// @param rightid index of right being queried. This index is determined by the storage order.
+    /// It is possible for rights to change order as new rights are added/removed.
+    /// To ensure rights didn't change order verify the usn value before/after enumerating rights.
+    /// @return a couple made of user address and user right
+    function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) override external view returns(address user, WFRights right) {
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
 
@@ -150,14 +194,27 @@ contract WorkflowBuilder {
         right = WFRights(rights[rightKey][rightid] >> 160);
     }
 
+    /// @dev Construct key from a given state and edge index to use with the rights mapping
+    /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param edgeid edge index. This matches the array of edges fed to addState
+    /// @return rights mapping key
     function makeRightsKey(uint32 stateid, uint32 edgeid) public pure returns(uint256) {
        return (uint256(stateid)<<128) | uint256(edgeid);
     }
 
+    /// @dev Construct value from a given address and right to use with the rights mapping
+    /// @param user address of user
+    /// @param right right value
+    /// @return value encoding together the address and right
     function makeRightsValue(address user, WFRights right) public pure returns(uint256) {
        return (uint256(right)<<160) | uint256(user);
     }
 
+    /// @dev Validate if right is allowed for a given edge
+    /// @param state1 state index. Defined on calling addState. First state gets index 0, next 1 etc,
+    /// @param state2 index of state connected to state1
+    /// @param right right being verified
+    /// @return true if right may be assigned to edge, false otherwise 
     function isValidRight(uint32 state1, uint32 state2, WFRights right) private view returns(bool) {
         //INIT is only allowed for S0
         if (right == WFRights.INIT) {
