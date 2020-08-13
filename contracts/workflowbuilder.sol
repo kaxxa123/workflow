@@ -181,7 +181,8 @@ contract WorkflowBuilder is IStateEngine {
     /// @param rightid index of right being queried. This index is determined by the storage order.
     /// It is possible for rights to change order as new rights are added/removed.
     /// To ensure rights didn't change order verify the usn value before/after enumerating rights.
-    /// @return a couple made of user address and user right
+    /// @return user address to whom right applies
+    /// @return right user right
     function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) override external view returns(address user, WFRights right) {
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
