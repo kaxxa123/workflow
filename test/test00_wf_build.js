@@ -1,6 +1,6 @@
 const WorkflowBuilder = artifacts.require("WorkflowBuilder");
 const HlpFail = require('./helpers/testFailure');
-const WFRights = require('./helpers/wfrights').WFRights;
+const WFRights = require('./helpers/wfhelp').WFRights;
 
 let wf;
 
