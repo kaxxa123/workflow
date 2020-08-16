@@ -28,15 +28,13 @@ function myPad(number, length) {
     return str;
 }
 
-function makeDocID(id, doctype) { 
+function makeDocID(doctype, id) { 
     let str = "0x" + myPad(id.toString(16), 8)+ myPad(doctype.toString(16), 8);
-    console.log(str);
     return BigNumber(str); 
 }
 
 function makeDocSet(loLimit, hiLimit, flags) {
     let str = "0x" + myPad(flags.toString(16), 8) + myPad(hiLimit.toString(16), 8) + myPad(loLimit.toString(16), 8);
-    console.log(str);
     return BigNumber(str); 
 }
 

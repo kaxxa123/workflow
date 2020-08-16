@@ -13,7 +13,7 @@ module.exports = function(deployer, network, accounts) {
             [makeDocSet(1,1,WFFlags.REQUIRED),
              makeDocSet(1,2,WFFlags.REQUIRED),
              makeDocSet(1,2,0),
-             makeDocSet(1,1,0)]);
+             makeDocSet(2,2,0)]);
     })
 
 }

@@ -14,9 +14,13 @@ contract Workflow {
         int32 count;            //doc type instance count
     }
 
-    struct DocInfo {
-        uint256 hashContent;    //keccak256("File content....") returns bytes32
-        uint32 version;         //usn
+    struct HistoryInfo {
+        address user;
+        WFRights action;
+        uint32  state;
+        uint256[] idsRmv;
+        uint256[] idsAdd;
+        uint256[] contentAdd;
     }
 
     uint32 public state;
@@ -27,18 +31,21 @@ contract Workflow {
     // <docType> => DocProps
     // <docType> values are automatically allocated based on the array order
     // supplied to the constructor. First array entry gets doc type 0, next 1...
-    mapping(uint32 => DocProps) public docSet;
+    mapping(uint32 => DocProps) private docSet;
     uint32 public totalDocTypes;
 
     //Latest file info.
-    // id => DocInfo
+    // id => docHash
     //  where
     //         id = <uid><docType>
     //      <uid> = A uinique, version and format indepdent file id.
     //              It's up to the caller to decide how to generate this.
     //  <docType> = Doc type matching the docSet key
-    //
-    mapping(uint256 => DocInfo) public latest;
+    //    docHash = keccak256("File content....") returns bytes32
+    mapping(uint256 => uint256) public latest;
+
+    //Document change history
+    HistoryInfo[] private history;
 
     /// @dev Initilize workflow
     /// @param eng state engine for worklow to follow
@@ -56,7 +63,7 @@ contract Workflow {
     /// @param nextState new state id
     /// @param ids a list of document ids to initialize the WF with
     /// @param content a list of document hashes to initialize the WF with
-    function doInit(uint32 nextState, uint256[] memory ids, uint256[] memory content) public {
+    function doInit(uint32 nextState, uint256[] calldata ids, uint256[] calldata content) external {
         require(engine.hasRight(state, nextState, msg.sender, WFRights.INIT), "Unauthorized state crossing");
         require(mode == WFMode.UNINIT,"Only when UNINIT");
 
@@ -68,24 +75,30 @@ contract Workflow {
         require(tot == content.length,"ids/content array length mismatch");
 
         for (uint cnt = 0; cnt < tot; ++cnt) {
-            //Get the properties for this doc type
             uint32 docType = uint32(ids[cnt]);
             require(docType < totalDocTypes, "Invalid doc type");
+            require(content[cnt] != 0, "Invalid doc hash");
 
             DocProps storage props = docSet[docType];
-            DocInfo storage doc = latest[ids[cnt]];
 
-            //Validate that we didn't exceed the allowed doc count for this type
+            //Validate: We didn't exceed the allowed doc count for this type
+            //Validate: We didn't get duplicate ids
             require(props.hiLimit >= props.count+1, "Doc type count exceeded limit");
+            require(latest[ids[cnt]] == 0, "Initializing same ID x times");
 
-            //Validate that we didn't already see this id
-            require(doc.hashContent == 0, "Initializing same ID x times");
-
-            doc.hashContent = content[cnt];
+            latest[ids[cnt]] = content[cnt];
             props.count += 1;
         }
 
         validateLoLimits();
+
+        history.push(HistoryInfo({
+            user: msg.sender, 
+            action: WFRights.INIT, 
+            state: nextState, 
+            idsRmv: new uint256[](0),
+            idsAdd: ids, 
+            contentAdd: content}));
 
         state = nextState;
         mode = WFMode.RUNNING;
@@ -93,9 +106,19 @@ contract Workflow {
 
     /// @dev Approve documents allowing the WF to move to the next state
     /// @param nextState new state id
-    function doApprove(uint32 nextState) public {
+    function doApprove(uint32 nextState) external {
         require(engine.hasRight(state, nextState, msg.sender, WFRights.APPROVE), "Unauthorized state crossing");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+        
+        uint256[] memory empty;
+        history.push(HistoryInfo({
+            user: msg.sender, 
+            action: WFRights.APPROVE, 
+            state: nextState, 
+            idsRmv: empty,
+            idsAdd: empty, 
+            contentAdd: empty}));
+
         state = nextState;
     }
 
@@ -103,10 +126,10 @@ contract Workflow {
     /// @param idsRmv list of ids for docs to remove
     /// @param idsAdd list of ids for docs to add/update
     /// @param contentAdd list of doc hashes to add/update
-    function doReview(
-                uint256[] memory idsRmv, 
-                uint256[] memory idsAdd, 
-                uint256[] memory contentAdd) public {
+    function doReview( uint256[] calldata idsRmv, 
+                       uint256[] calldata idsAdd, 
+                       uint256[] calldata contentAdd) external { 
+
         require(engine.hasRight(state, state, msg.sender, WFRights.REVIEW), "Unauthorized state crossing");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
 
@@ -117,14 +140,15 @@ contract Workflow {
 
         //Remove documents
         for (uint cnt = 0; cnt < totRmv; ++cnt) {
-            require(latest[idsRmv[cnt]].hashContent != 0,"Doc not found");
+            //This require effectively confirms that:
+            //  1. A doc with specified id exists
+            //  2. The doctype id component is valid
+            //  3. props.count must be > 0 (unless we have a bug elsewhere)
+            require(latest[idsRmv[cnt]] != 0,"Doc not found");
             delete latest[idsRmv[cnt]];
 
             uint32 docType = uint32(idsRmv[cnt]);
-            require(docType < totalDocTypes,"Invalid doc type");
             DocProps storage props = docSet[docType];
-            
-            require(props.count < 1,"Unexpected doc type count");
             props.count -= 1;
         }
 
@@ -133,46 +157,107 @@ contract Workflow {
             //Get the properties for this doc type
             uint32 docType = uint32(idsAdd[cnt]);
             require(docType < totalDocTypes, "Invalid doc type");
+            require(contentAdd[cnt] != 0, "Invalid doc hash");
 
             DocProps storage props = docSet[docType];
-            DocInfo storage doc = latest[idsAdd[cnt]];
 
             //New Doc
-            if (doc.hashContent == 0) {
+            if (latest[idsAdd[cnt]] == 0) {
                 //Validate that we didn't exceed the allowed doc count for this type
                 require(props.hiLimit >= props.count+1, "Doc type count exceeded limit");
                 props.count += 1;
             }
 
-            //Updated Doc
-            doc.hashContent = contentAdd[cnt];
-            doc.version += 1;
+            latest[idsAdd[cnt]] = contentAdd[cnt];
         }
 
         validateLoLimits();
+
+        history.push(HistoryInfo({
+            user: msg.sender, 
+            action: WFRights.SIGNOFF, 
+            state: state, 
+            idsRmv: idsRmv,
+            idsAdd: idsAdd, 
+            contentAdd: contentAdd}));
     }
 
     /// @dev Conclude WF with a successful sign-off
     /// @param nextState new state id
-    function doSignoff(uint32 nextState) public {
+    function doSignoff(uint32 nextState) external {
         require(engine.hasRight(state, nextState, msg.sender, WFRights.SIGNOFF), "Unauthorized state crossing");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+
+        uint256[] memory empty;
+        history.push(HistoryInfo({
+            user: msg.sender, 
+            action: WFRights.SIGNOFF, 
+            state: nextState, 
+            idsRmv: empty,
+            idsAdd: empty, 
+            contentAdd: empty}));
+
         state = nextState;
         mode = WFMode.COMPLETE;
     }
 
     /// @dev Abort WF
     /// @param nextState new state id
-    function doAbort(uint32 nextState) public {
+    function doAbort(uint32 nextState) external {
         require(engine.hasRight(state, nextState, msg.sender, WFRights.ABORT), "Unauthorized state crossing");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+
+        uint256[] memory empty;
+        history.push(HistoryInfo({
+            user: msg.sender, 
+            action: WFRights.ABORT, 
+            state: nextState, 
+            idsRmv: empty,
+            idsAdd: empty, 
+            contentAdd: empty}));
+
         state = nextState;
         mode = WFMode.ABORTED;
     }
 
+    /// @dev Get doc type properties
+    /// @param docType document type id
+    /// @return flags loLimit hiLimit count
+    function getDocProps(uint32 docType) external view  returns(uint32 flags, int32 loLimit, int32 hiLimit, int32 count) {
+        require(docType < totalDocTypes, "Invalid Doc Type");
+
+        DocProps storage docProps = docSet[docType];
+        return (docProps.flags, docProps.loLimit, docProps.hiLimit, docProps.count);
+    }
+
+    /// @dev Get document history by index
+    /// @param idx document history index. Where index 0 is the 1st document submission
+    /// operation, index 1 is the 2nd WF operation etc.
+    /// @return user action stateNow idsRmv idsAdd contentAdd
+    function getHistory(uint256 idx) external view returns( address user, 
+                                                            WFRights action, 
+                                                            uint32  stateNow, 
+                                                            uint256[] memory idsRmv, 
+                                                            uint256[] memory idsAdd, 
+                                                            uint256[] memory contentAdd) {
+        require(idx < history.length, "Invalid Doc Type");
+
+        HistoryInfo storage info = history[idx];
+
+        return (info.user,
+                info.action,
+                info.state,
+                info.idsRmv,
+                info.idsAdd,
+                info.contentAdd);
+    }
+
+    function totalHistory() external view returns(uint256) {
+        return history.length;
+    }
+
     // Convert input document set to DocProps stuctures
-    function initDocSet(uint256[] memory docs) private
-    {
+    function initDocSet(uint256[] memory docs) private {
         uint32 uTot = uint32(docs.length);
         for (uint32 uCnt = 0; uCnt< uTot; ++uCnt)
         {
