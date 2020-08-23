@@ -38,10 +38,47 @@ function makeDocSet(loLimit, hiLimit, flags) {
     return BigNumber(str); 
 }
 
+async function getLatest(wf) {
+    //Discover the set of current documents by tranversing the history
+    let totHist = await wf.totalHistory()
+    let docIds = [];
+
+    for (cnt = 0; cnt <totHist; ++cnt) {
+        let history = await wf.getHistory(cnt);
+
+        if ((history.action == WFRights.INIT)  && (history.idsAdd)) {
+            docIds = docIds.concat(history.idsAdd)
+        }
+
+        else if (history.action == WFRights.REVIEW) {
+
+            if (history.idsRmv) {
+                history.idsRmv.forEach( item => {
+                    let idx = docIds.indexOf(item);
+                    assert(idx == -1, "Unexpected: Index Not Found, on traversing history!")
+                    docIds.splice(idx,1);
+                })
+            }
+
+            if (history.idsAdd) {
+                history.idsAdd.forEach( item => {
+                    let idx = docIds.indexOf(item);
+                    if (idx == -1) {
+                        docIds.push(item);
+                    }
+                })
+            }
+        }
+    }
+
+    return docIds;
+}
+
 module.exports = {
     WFRights,
     WFMode,
     WFFlags,
     makeDocID,
-    makeDocSet
+    makeDocSet,
+    getLatest
 }

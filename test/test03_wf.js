@@ -4,6 +4,7 @@ const HlpFail = require('./helpers/testFailure');
 const WFRights = require('./helpers/wfhelp').WFRights;
 const WFMode = require('./helpers/wfhelp').WFMode;
 const makeDocID = require('./helpers/wfhelp').makeDocID;
+const getLatest = require('./helpers/wfhelp').getLatest;
 
 const showDocSet = async (wf) => {
     let totDocs = await wf.totalDocTypes()
@@ -31,40 +32,9 @@ const showHistory = async (wf) => {
 }
 
 const showLatest = async (wf) => {
-    //Discover the set of current documents by tranversing the history
-    let totHist = await wf.totalHistory()
+
+    let docIds = await getLatest(wf);
     console.log();
-
-    let docIds = [];
-
-    for (cnt = 0; cnt <totHist; ++cnt) {
-        let history = await wf.getHistory(cnt);
-
-        if ((history.action == WFRights.INIT)  && (history.idsAdd)) {
-            docIds = docIds.concat(history.idsAdd)
-        }
-
-        else if (history.action == WFRights.REVIEW) {
-
-            if (history.idsRmv) {
-                history.idsRmv.forEach( item => {
-                    let idx = docIds.indexOf(item);
-                    assert(idx == -1, "Unexpected: Index Not Found, on traversing history!")
-                    docIds.splice(idx,1);
-                })
-            }
-
-            if (history.idsAdd) {
-                history.idsAdd.forEach( item => {
-                    let idx = docIds.indexOf(item);
-                    if (idx == -1) {
-                        docIds.push(item);
-                    }
-                })
-            }
-        }
-    }
-
     console.log(`Current document ids:`);
     console.log(`${docIds.map(toHex)}`);
     console.log();
@@ -448,6 +418,8 @@ contract('Testing Workflow', function (accounts) {
     });
 
     it('Should Review OK', async () => {
+        let wf = await Workflow.deployed();
+
         await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
         await showHistory(wf);
         await showLatest(wf);
