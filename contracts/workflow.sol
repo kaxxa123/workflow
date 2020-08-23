@@ -48,7 +48,7 @@ contract Workflow {
     HistoryInfo[] private history;
 
     /// @dev Initilize workflow
-    /// @param eng state engine for worklow to follow
+    /// @param eng state engine for the workflow to follow
     /// @param docs document set that will traverse this workflow
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
@@ -175,7 +175,7 @@ contract Workflow {
 
         history.push(HistoryInfo({
             user: msg.sender, 
-            action: WFRights.SIGNOFF, 
+            action: WFRights.REVIEW, 
             state: state, 
             idsRmv: idsRmv,
             idsAdd: idsAdd, 
