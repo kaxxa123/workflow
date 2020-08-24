@@ -47,26 +47,26 @@ async function getLatest(wf) {
         let history = await wf.getHistory(cnt);
 
         if ((history.action == WFRights.INIT)  && (history.idsAdd)) {
-            docIds = docIds.concat(history.idsAdd)
+            history.idsAdd.forEach( item => docIds.push(BigNumber(item)));
         }
 
         else if (history.action == WFRights.REVIEW) {
 
             if (history.idsRmv) {
                 history.idsRmv.forEach( item => {
-                    let idx = docIds.indexOf(item);
-                    assert(idx == -1, "Unexpected: Index Not Found, on traversing history!")
+                    let idx = docIds.findIndex(item2 => item2.isEqualTo(item));
+                    assert(idx >= 0, "Unexpected: Index Not Found, on traversing history!")
                     docIds.splice(idx,1);
-                })
+                });
             }
 
             if (history.idsAdd) {
                 history.idsAdd.forEach( item => {
-                    let idx = docIds.indexOf(item);
+                    let idx = docIds.findIndex(item2 => item2.isEqualTo(item));
                     if (idx == -1) {
-                        docIds.push(item);
+                        docIds.push(BigNumber(item));
                     }
-                })
+                });
             }
         }
     }

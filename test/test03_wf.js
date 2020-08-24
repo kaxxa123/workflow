@@ -34,9 +34,16 @@ const showHistory = async (wf) => {
 const showLatest = async (wf) => {
 
     let docIds = await getLatest(wf);
+
     console.log();
     console.log(`Current document ids:`);
-    console.log(`${docIds.map(toHex)}`);
+
+    for (cnt = 0; cnt < docIds.length; ++cnt) {
+        let item = docIds[cnt];
+        let hash = await wf.latest(item);
+        console.log(`${toHex(item)} => ${toHex(hash)}`);
+    }
+
     console.log();
 }
 
@@ -421,8 +428,10 @@ contract('Testing Workflow', function (accounts) {
         let wf = await Workflow.deployed();
 
         await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
+        await wf.doReview([], [makeDocID(2, 0x333)], [0x333], {from: accounts[1]});
+        await wf.doReview([], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
+        await wf.doReview([makeDocID(2, 0x333), makeDocID(1, 2001)], [], [], {from: accounts[1]});
         await showHistory(wf);
         await showLatest(wf);
     });
-
 });
