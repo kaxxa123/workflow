@@ -74,11 +74,53 @@ async function getLatest(wf) {
     return docIds;
 }
 
+async function showDocSet(wf) {
+    let totDocs = await wf.totalDocTypes()
+
+    for (cnt = 0; cnt <totDocs; ++cnt) {
+        let docProps = await wf.getDocProps(cnt);
+        console.log(`Flags: ${docProps.flags}, loLimit: ${docProps.loLimit}, hiLimit: ${docProps.hiLimit}, count: ${docProps.count}`);
+    }
+}
+
+const toHex = (item) => `0x${item.toString(16)}`;
+
+async function showHistory(wf) {
+    let totHist = await wf.totalHistory()
+    console.log();
+
+    for (cnt = 0; cnt <totHist; ++cnt) {
+        let history = await wf.getHistory(cnt);
+        console.log(`user: ${history.user}, action: ${history.action}`);
+        console.log(`stateNow: ${history.stateNow}`);
+        console.log(`Removed: ${history.idsRmv.map(toHex)}`);
+        console.log(`Added: ${history.idsAdd.map(toHex)} => ${history.contentAdd.map(toHex)}`);
+        console.log();
+    }
+}
+
+async function showLatest(wf) {
+    let docIds = await getLatest(wf);
+
+    console.log();
+    console.log(`Current document ids:`);
+
+    for (cnt = 0; cnt < docIds.length; ++cnt) {
+        let item = docIds[cnt];
+        let hash = await wf.latest(item);
+        console.log(`${toHex(item)} => ${toHex(hash)}`);
+    }
+    console.log();
+}
+
 module.exports = {
     WFRights,
     WFMode,
     WFFlags,
     makeDocID,
     makeDocSet,
-    getLatest
+    getLatest,
+    showDocSet,
+    showHistory,
+    showLatest
 }
