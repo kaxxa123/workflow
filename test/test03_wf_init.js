@@ -1,17 +1,38 @@
 const WorkflowBuilder = artifacts.require("WorkflowBuilder");
+const WorkflowManager = artifacts.require("WorkflowManager");
 const Workflow = artifacts.require("Workflow");
+const truffleAssert = require('truffle-assertions');
 const HlpFail = require('./helpers/testFailure');
-const WFRights = require('./helpers/wfhelp').WFRights;
-const WFMode = require('./helpers/wfhelp').WFMode;
-const makeDocID = require('./helpers/wfhelp').makeDocID;
 const wfhlp = require('./helpers/wfhelp');
 
+const WFRights = wfhlp.WFRights;
+const WFFlags = wfhlp.WFFlags;
+const WFMode = wfhlp.WFMode;
+const makeDocSet = wfhlp.makeDocSet;
+const makeDocID = wfhlp.makeDocID;
+
 contract('Testing Workflow Init', function (accounts) {
+
+    var wfAddr;
+    var wfID;
 
     it('Should Create Workflow OK', async () => {
 
         let engine = await WorkflowBuilder.deployed();
-        let wf = await Workflow.deployed();
+        let mgr = await WorkflowManager.deployed();
+        let recpt = await mgr.addWF(engine.address, 
+                                [makeDocSet(1,1,WFFlags.REQUIRED),
+                                makeDocSet(1,2,WFFlags.REQUIRED),
+                                makeDocSet(1,2,0),
+                                makeDocSet(2,2,0)]);
+                                
+        truffleAssert.eventEmitted(recpt, 'EventWFAdded', (ev) => {
+            wfID = ev.id; 
+            wfAddr = ev.addr; 
+            return true; 
+        });
+        let wf = await Workflow.at(wfAddr);
+
         let engineAddr = await wf.engine()
         assert(engineAddr == engine.address, "Mismatched engine address")
 
@@ -35,7 +56,7 @@ contract('Testing Workflow Init', function (accounts) {
 
     it('Should fail to init WF', async () => {
 
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
         let state = await wf.state()
         let mode = await wf.mode()
         let totDocs = await wf.totalDocTypes()
@@ -91,7 +112,7 @@ contract('Testing Workflow Init', function (accounts) {
     });
 
     it('Should fail to perform any action other than Init', async () => {
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //From S0 only a doInit is allowed
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
@@ -130,7 +151,7 @@ contract('Testing Workflow Init', function (accounts) {
     });
 
     it('Should perform Init Ok', async () => {
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
 

@@ -18,3 +18,7 @@ enum WFRights {
 interface IStateEngine {
     function hasRight(uint32 state1, uint32 state2, address user, WFRights right) external view returns (bool);
 }
+
+interface IWFRemove {
+    function removeWF(uint256 idx) external;
+}

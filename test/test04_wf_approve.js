@@ -1,17 +1,38 @@
 const WorkflowBuilder = artifacts.require("WorkflowBuilder");
+const WorkflowManager = artifacts.require("WorkflowManager");
 const Workflow = artifacts.require("Workflow");
+const truffleAssert = require('truffle-assertions');
 const HlpFail = require('./helpers/testFailure');
-const WFRights = require('./helpers/wfhelp').WFRights;
-const WFMode = require('./helpers/wfhelp').WFMode;
-const makeDocID = require('./helpers/wfhelp').makeDocID;
 const wfhlp = require('./helpers/wfhelp');
 
+const WFRights = wfhlp.WFRights;
+const WFFlags = wfhlp.WFFlags;
+const WFMode = wfhlp.WFMode;
+const makeDocSet = wfhlp.makeDocSet;
+const makeDocID = wfhlp.makeDocID;
+
 contract('Testing Workflow Approve', function (accounts) {
+
+    var wfAddr;
+    var wfID;
 
     it('Should Create Workflow OK', async () => {
 
         let engine = await WorkflowBuilder.deployed();
-        let wf = await Workflow.deployed();
+        let mgr = await WorkflowManager.deployed();
+        let recpt = await mgr.addWF(engine.address, 
+                                [makeDocSet(1,1,WFFlags.REQUIRED),
+                                makeDocSet(1,2,WFFlags.REQUIRED),
+                                makeDocSet(1,2,0),
+                                makeDocSet(2,2,0)]);
+                                
+        truffleAssert.eventEmitted(recpt, 'EventWFAdded', (ev) => {
+            wfID = ev.id; 
+            wfAddr = ev.addr; 
+            return true; 
+        });
+        let wf = await Workflow.at(wfAddr);
+
         let engineAddr = await wf.engine()
         assert(engineAddr == engine.address, "Mismatched engine address")
 
@@ -37,7 +58,7 @@ contract('Testing Workflow Approve', function (accounts) {
 
     it('Should fail to Approve WF', async () => {
 
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
@@ -57,7 +78,7 @@ contract('Testing Workflow Approve', function (accounts) {
 
     it('Should fail to perform any action other than Approve', async () => {
 
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //From S1 only only an Approve action is configured
         await HlpFail.testFail("wf.doInit", "Unauthorized state crossing", async () => { 
@@ -96,7 +117,7 @@ contract('Testing Workflow Approve', function (accounts) {
     });
 
     it('Should Cross State to Apporve Ok', async () => {
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //S1 -> S2
         await wf.doApprove(2, {from: accounts[1]})
@@ -141,7 +162,7 @@ contract('Testing Workflow Approve', function (accounts) {
 
     it('Should fail to Approve WF', async () => {
 
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
@@ -161,7 +182,7 @@ contract('Testing Workflow Approve', function (accounts) {
 
     it('Should fail to perform any action other than Approve', async () => {
 
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //From S2 only only an Approve action is configured
         await HlpFail.testFail("wf.doInit", "Unauthorized state crossing", async () => { 
@@ -201,7 +222,7 @@ contract('Testing Workflow Approve', function (accounts) {
 
     it('Should Cross State to Apporve Ok2', async () => {
         let engine = await WorkflowBuilder.deployed();
-        let wf = await Workflow.deployed();
+        let wf = await Workflow.at(wfAddr);
 
         //S2 -> S3 -> S2 -> S3 -> S2
         await wf.doApprove(3, {from: accounts[2]});

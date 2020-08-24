@@ -23,9 +23,11 @@ contract Workflow {
         uint256[] contentAdd;
     }
 
-    uint32 public state;
-    WFMode public mode;
-    IStateEngine public engine;
+    uint32 public state;                //Current State number S0, S1, S2...
+    WFMode public mode;                 //Current Mode
+    uint256 public wfID;                //WorkflowBuilder loan ID
+    IStateEngine public engine;         //State Engine interface
+    IWFRemove private addrWFMan;      //Contract with whom we have to unsubscribe WF
 
     //Document Set properties
     // <docType> => DocProps
@@ -52,10 +54,23 @@ contract Workflow {
     /// @param docs document set that will traverse this workflow
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
-    constructor (IStateEngine eng, uint256[] memory docs) public {
+    /// @param addrWFRmv address with whom we have to unsubscribe WF
+    /// @param id Manager WF unique id
+    constructor (
+        IStateEngine eng, 
+        uint256[] memory docs,
+        address addrWFRmv,
+        uint256 id
+    ) 
+        public 
+    {
+        require(addrWFRmv != address(0x0), "Invalid WorkflowManager address");
+
         state = 0;
         engine = eng;
         mode = WFMode.UNINIT;
+        addrWFMan = IWFRemove(addrWFRmv);
+        wfID = id;
         initDocSet(docs);
     }
 
@@ -199,6 +214,7 @@ contract Workflow {
 
         state = nextState;
         mode = WFMode.COMPLETE;
+        addrWFMan.removeWF(wfID);
     }
 
     /// @dev Abort WF
@@ -218,6 +234,7 @@ contract Workflow {
 
         state = nextState;
         mode = WFMode.ABORTED;
+        addrWFMan.removeWF(wfID);
     }
 
     /// @dev Get doc type properties
@@ -252,6 +269,8 @@ contract Workflow {
                 info.contentAdd);
     }
 
+    /// @dev Get total history elements or use as a USN to detect WF changes.
+    /// @return total number of history elements
     function totalHistory() external view returns(uint256) {
         return history.length;
     }
