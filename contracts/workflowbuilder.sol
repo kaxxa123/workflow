@@ -125,14 +125,14 @@ contract WorkflowBuilder is IStateEngine {
 
     /// @dev Get total defined states
     /// @return total states
-    function getTotalStates() override external view returns (uint32) {
+    function getTotalStates() external view returns (uint32) {
         return uint32(states.length);
     }
 
     /// @dev Get total edges coming out from a given state
     /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
     /// @return total edges for given state
-    function getTotalEdges(uint32 stateid) override external view returns (uint32) {
+    function getTotalEdges(uint32 stateid) external view returns (uint32) {
         require(stateid < states.length, "Non-existing state");
         return uint32(states[stateid].length);
     }
@@ -141,7 +141,7 @@ contract WorkflowBuilder is IStateEngine {
     /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
     /// @param edgeid edge index. This matches the array of edges fed to addState
     /// @return total rights for given edge
-    function getTotalRights(uint32 stateid, uint32 edgeid) override external view returns (uint32) {
+    function getTotalRights(uint32 stateid, uint32 edgeid) external view returns (uint32) {
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
 
@@ -183,7 +183,7 @@ contract WorkflowBuilder is IStateEngine {
     /// To ensure rights didn't change order verify the usn value before/after enumerating rights.
     /// @return user address to whom right applies
     /// @return right user right
-    function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) override external view returns(address user, WFRights right) {
+    function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) external view returns(address user, WFRights right) {
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
 

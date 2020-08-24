@@ -16,9 +16,5 @@ enum WFRights {
 }
 
 interface IStateEngine {
-    function getTotalStates() external view returns (uint32);
-    function getTotalEdges(uint32 stateid) external view returns (uint32);
-    function getTotalRights(uint32 stateid, uint32 edgeid) external view returns (uint32);
     function hasRight(uint32 state1, uint32 state2, address user, WFRights right) external view returns (bool);
-    function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) external view returns(address user, WFRights right);
 }
