@@ -61,6 +61,11 @@ contract('Testing WorkflowManager readWF', function (accounts) {
 
         await setupStateEngine(engine);
 
+        let participants = await wfhlp.getParticipants(engine);
+        console.log("Participants:");
+        console.log(participants);
+        console.log();
+
         //Create 17 WFs
         for (var count = 0; count < 17; ++count) {
 

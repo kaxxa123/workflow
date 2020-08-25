@@ -113,6 +113,32 @@ async function showLatest(wf) {
     console.log();
 }
 
+async function getParticipants(builder) {
+
+    let totStates = await builder.getTotalStates();
+    let userList = [];
+
+    for (cntStates = 0; cntStates < totStates; ++cntStates) {
+
+        let totEdges = await builder.getTotalEdges(cntStates);
+        for (cntEdges = 0; cntEdges < totEdges; ++cntEdges) {
+
+            let totRights = await builder.getTotalRights(cntStates, cntEdges);
+            for (cntRights = 0; cntRights < totRights; ++cntRights) {
+                let right = await builder.getRight(cntStates, cntEdges, cntRights);
+                let addr = right.user.toUpperCase();
+
+                let idx = userList.indexOf(addr);
+                if (idx == -1) {
+                    userList.push(addr);
+                }
+            }
+        }
+    }
+
+    return userList;
+}
+
 module.exports = {
     WFRights,
     WFMode,
@@ -122,5 +148,6 @@ module.exports = {
     getLatest,
     showDocSet,
     showHistory,
-    showLatest
+    showLatest,
+    getParticipants
 }
