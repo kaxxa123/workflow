@@ -38,7 +38,7 @@ contract WorkflowManager is IWFRemove {
     /// @param docs document set that will traverse this workflow
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
-    function addWF(IStateEngine eng, uint256[] calldata docs) external {
+    function addWF(address eng, uint256[] calldata docs) external {
         require(owner == msg.sender, "Unauthorized");
 
         Workflow oneWF = new Workflow(
@@ -158,6 +158,12 @@ contract WorkflowManager is IWFRemove {
     /// @return id of last WF
     function lastWF() public view returns (uint256) {
         return openWFs[0].prev;
+    }
+
+    /// @dev Get the total closed WF entries
+    /// @return total count of closed WFs
+    function totalClosedWFs() external view returns (uint256) {
+        return closedWFs.length;
     }
 
     /// @dev Set id of last WF added

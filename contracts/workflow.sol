@@ -27,7 +27,7 @@ contract Workflow {
     WFMode public mode;                 //Current Mode
     uint256 public wfID;                //WorkflowBuilder loan ID
     IStateEngine public engine;         //State Engine interface
-    IWFRemove private addrWFMan;      //Contract with whom we have to unsubscribe WF
+    IWFRemove private addrWFMan;        //Contract with whom we have to unsubscribe WF
 
     //Document Set properties
     // <docType> => DocProps
@@ -50,25 +50,27 @@ contract Workflow {
     HistoryInfo[] private history;
 
     /// @dev Initilize workflow
-    /// @param eng state engine for the workflow to follow
+    /// @param eng address of state engine contract for the workflow to follow
     /// @param docs document set that will traverse this workflow
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
     /// @param addrWFRmv address with whom we have to unsubscribe WF
     /// @param id Manager WF unique id
     constructor (
-        IStateEngine eng, 
+        address eng, 
         uint256[] memory docs,
         address addrWFRmv,
         uint256 id
     ) 
         public 
     {
+        require(eng != address(0x0), "Invalid State Engine address");
         require(addrWFRmv != address(0x0), "Invalid WorkflowManager address");
+        require(docs.length > 0, "Empty Doc Set");
 
         state = 0;
-        engine = eng;
         mode = WFMode.UNINIT;
+        engine = IStateEngine(eng);
         addrWFMan = IWFRemove(addrWFRmv);
         wfID = id;
         initDocSet(docs);
