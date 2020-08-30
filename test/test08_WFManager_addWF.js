@@ -23,24 +23,41 @@ contract('Testing WorkflowManager addWF', function (accounts) {
         makeDocSet(1,2,0),
         makeDocSet(2,2,0)]; 
 
+    it('should fail to create WF (rights)', async () => {
+        let engine = await WorkflowBuilder.deployed();
+        let mgr = await WorkflowManager.deployed();
+
+        await HlpFail.testFail("mgr.addWF", "Unauthorized", async () => { 
+            await mgr.addWF(engine.address, docSet, {from: accounts[0]});
+        });
+
+        await HlpFail.testFail("mgr.addWF", "Unauthorized", async () => { 
+            await mgr.addWF(engine.address, docSet, {from: accounts[1]});
+        });
+    });
+
+    it('should create WF Admin', async () => {
+        let mgr = await WorkflowManager.deployed();
+
+        let DEFAULT_ADMIN_ROLE = await mgr.DEFAULT_ADMIN_ROLE();
+        await mgr.grantRole(DEFAULT_ADMIN_ROLE, accounts[9]);
+        await mgr.renounceRole(DEFAULT_ADMIN_ROLE, accounts[0]);
+
+        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
+        await mgr.grantRole(WF_ADMIN_ROLE, accounts[5], {from: accounts[9]});
+    });
+
     it('should fail to create WF (invalid param)', async () => {
 
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
 
-        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
-        await mgr.grantRole(WF_ADMIN_ROLE, accounts[0]);
-
         await HlpFail.testFail("mgr.addWF", "Invalid State Engine address", async () => { 
-            await mgr.addWF("0x0000000000000000000000000000000000000000", docSet);
+            await mgr.addWF("0x0000000000000000000000000000000000000000", docSet, {from: accounts[5]});
         });
 
         await HlpFail.testFail("mgr.addWF", "Empty Doc Set", async () => { 
-            await mgr.addWF(engine.address, []);
-        });
-
-        await HlpFail.testFail("mgr.addWF", "Unauthorized", async () => { 
-            await mgr.addWF(engine.address, docSet, {from: accounts[1]});
+            await mgr.addWF(engine.address, [], {from: accounts[5]});
         });
     });
 
@@ -50,7 +67,7 @@ contract('Testing WorkflowManager addWF', function (accounts) {
 
         for (var count = 0; count < 17; ++count) {
 
-            let recpt = await mgr.addWF(engine.address, docSet);
+            let recpt = await mgr.addWF(engine.address, docSet, {from: accounts[5]});
             truffleAssert.eventEmitted(recpt, 'EventWFAdded', (ev) => {
                 wfAddrs[count] = ev.addr;
                 return (ev.id == (count+1)); 
