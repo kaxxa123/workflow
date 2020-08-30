@@ -27,6 +27,9 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
 
 
     const setupStateEngine = async (engine) => {
+        let WF_SCHEMA_ADMIN_ROLE = await engine.WF_SCHEMA_ADMIN_ROLE();
+        await engine.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
+
         await engine.addState([1]);
         await engine.addState([2]);
         await engine.addState([3]);
@@ -50,6 +53,9 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
         let mgr = await WorkflowManager.deployed();
         var wfAddr;
         var wfId;
+
+        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
+        await mgr.grantRole(WF_ADMIN_ROLE, accounts[0]);
 
         let recpt = await mgr.addWF(engine.address, docSet);
         truffleAssert.eventEmitted(recpt, 'EventWFAdded', (ev) => {

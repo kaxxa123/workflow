@@ -28,6 +28,9 @@ contract('Testing WorkflowManager readWF', function (accounts) {
         makeDocSet(2,2,0)]; 
 
     const setupStateEngine = async (engine) => {
+        let WF_SCHEMA_ADMIN_ROLE = await engine.WF_SCHEMA_ADMIN_ROLE();
+        await engine.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
+
         await engine.addState([1]);
         await engine.addState([2]);
         await engine.addState([3]);
@@ -58,6 +61,9 @@ contract('Testing WorkflowManager readWF', function (accounts) {
     it('should create 17 WFs', async () => {
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
+
+        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
+        await mgr.grantRole(WF_ADMIN_ROLE, accounts[0]);
 
         await setupStateEngine(engine);
 

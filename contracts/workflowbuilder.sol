@@ -1,10 +1,13 @@
 pragma solidity ^0.6.0;
 
 import "./Interfaces.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title A contract to build & manage a state engine
 /// @author Alexander Zammit
-contract WorkflowBuilder is IStateEngine {
+contract WorkflowBuilder is IStateEngine, AccessControl {
+
+    bytes32 public constant WF_SCHEMA_ADMIN_ROLE = keccak256("WF_SCHEMA_ADMIN_ROLE");
 
     //All States/Edges are stored as an array of arrays
     //Such that: states[InitialState][EdgeIdx] = EndState
@@ -23,18 +26,16 @@ contract WorkflowBuilder is IStateEngine {
     //false - more states/edges can be added
     bool    public  finalized;
 
-    //The only account allowed to edit this WF
-    address private owner;
 
     /// @dev Initializes WorkflowBuilder
     constructor() public {
-        owner = msg.sender;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /// @dev Append a new state.
     /// @param edges an array of edges identifying the set of connected state
     function addState(uint32[] memory edges) public {
-        require(owner == msg.sender, "Unauthorized");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
         require(!finalized, "Workflow is final");
         states.push();
         states[states.length-1] = edges;
@@ -43,7 +44,7 @@ contract WorkflowBuilder is IStateEngine {
 
     /// @dev Mark state engine structure as final
     function doFinalize() external {
-        require(owner == msg.sender, "Unauthorized");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
 
         //Basic state engine validation. 
         //Make sure all edges refer to a valid End State
@@ -69,7 +70,7 @@ contract WorkflowBuilder is IStateEngine {
     /// @param right the right being assigned
     function addRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
         require(finalized, "Workflow is not final");
-        require(owner == msg.sender, "Unauthorized");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
         require(isValidRight(stateid,states[stateid][edgeid],right), "Right not allowed for this edge");
@@ -95,7 +96,7 @@ contract WorkflowBuilder is IStateEngine {
     /// @param right the right being revoked
     function removeRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
         require(finalized, "Workflow is not final");
-        require(owner == msg.sender, "Unauthorized");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
         require(stateid < states.length, "Non-existing state");
         require(edgeid < states[stateid].length, "Non-existing edge");
 

@@ -8,6 +8,9 @@ contract('Testing Adding States Failures', function (accounts) {
 
         let wf = await WorkflowBuilder.deployed();
 
+        let WF_SCHEMA_ADMIN_ROLE = await wf.WF_SCHEMA_ADMIN_ROLE();
+        await wf.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
+
         //Cannot add state if not deployer account
         await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
             await wf.addState([1], {from: accounts[2]});

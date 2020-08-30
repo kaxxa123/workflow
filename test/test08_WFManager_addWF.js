@@ -28,6 +28,9 @@ contract('Testing WorkflowManager addWF', function (accounts) {
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
 
+        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
+        await mgr.grantRole(WF_ADMIN_ROLE, accounts[0]);
+
         await HlpFail.testFail("mgr.addWF", "Invalid State Engine address", async () => { 
             await mgr.addWF("0x0000000000000000000000000000000000000000", docSet);
         });

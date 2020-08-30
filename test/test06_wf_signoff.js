@@ -20,6 +20,10 @@ contract('Testing Workflow SignOff', function (accounts) {
 
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
+
+        let WF_ADMIN_ROLE = await mgr.WF_ADMIN_ROLE();
+        await mgr.grantRole(WF_ADMIN_ROLE, accounts[0]);
+
         let recpt = await mgr.addWF(engine.address, 
                                 [makeDocSet(1,1,WFFlags.REQUIRED),
                                 makeDocSet(1,2,WFFlags.REQUIRED),
@@ -35,6 +39,9 @@ contract('Testing Workflow SignOff', function (accounts) {
 
         let engineAddr = await wf.engine()
         assert(engineAddr == engine.address, "Mismatched engine address")
+
+        let WF_SCHEMA_ADMIN_ROLE = await engine.WF_SCHEMA_ADMIN_ROLE();
+        await engine.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
 
         await engine.addState([1]);
         await engine.addState([2]);

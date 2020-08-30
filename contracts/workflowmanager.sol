@@ -1,10 +1,13 @@
 pragma solidity ^0.6.0;
 
 import "./workflow.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title A contract to manage a list of WFs
 /// @author Alexander Zammit
-contract WorkflowManager is IWFRemove {
+contract WorkflowManager is IWFRemove, AccessControl {
+
+    bytes32 public constant WF_ADMIN_ROLE = keccak256("WF_ADMIN_ROLE");
 
     struct ListElement {
         uint256 prev;           //Previous list item pointer
@@ -19,8 +22,6 @@ contract WorkflowManager is IWFRemove {
     mapping(uint256 => ListElement) private openWFs;
     address[] public closedWFs;
 
-    address private owner;
-
     //Events
     event EventWFAdded(uint256 indexed id, address addr);
     event EventWFDeleted(uint256 indexed id, address addr);
@@ -30,7 +31,8 @@ contract WorkflowManager is IWFRemove {
         //Id zero is reserved.
         //First WF to be created will have id 1
         nextWF = 1;
-        owner = msg.sender;
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /// @dev Add WF.
@@ -39,7 +41,7 @@ contract WorkflowManager is IWFRemove {
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
     function addWF(address eng, uint256[] calldata docs) external {
-        require(owner == msg.sender, "Unauthorized");
+        require(hasRole(WF_ADMIN_ROLE, msg.sender), "Unauthorized");
 
         Workflow oneWF = new Workflow(
             eng, 

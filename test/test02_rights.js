@@ -7,6 +7,10 @@ contract('Testing Rights', function (accounts) {
     it('Should fail to Add/Remove rights 1', async () => {
 
         let wf = await WorkflowBuilder.deployed();
+
+        let WF_SCHEMA_ADMIN_ROLE = await wf.WF_SCHEMA_ADMIN_ROLE();
+        await wf.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
+
         //Add states just fine
         await wf.addState([1]);
         await wf.addState([2]);

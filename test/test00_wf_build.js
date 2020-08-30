@@ -37,6 +37,9 @@ contract('Testing Workflow Builer', function (accounts) {
 
         wf = await WorkflowBuilder.deployed();
         
+        let WF_SCHEMA_ADMIN_ROLE = await wf.WF_SCHEMA_ADMIN_ROLE();
+        await wf.grantRole(WF_SCHEMA_ADMIN_ROLE, accounts[0]);
+
         //Load the State Engine structure
         await wf.addState([1]);
         await wf.addState([2]);
