@@ -2,6 +2,8 @@ pragma solidity ^0.6.0;
 
 import "./Interfaces.sol";
 
+/// @title A contract to manage a Workflow aka Documents going through a state engine driven review process.
+/// @author Alexander Zammit
 contract Workflow {
     uint32 constant FLAG_REQUIRED = 1;
     uint32 constant FLAG_PUBLIC = 2;

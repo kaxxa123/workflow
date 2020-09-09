@@ -84,8 +84,13 @@ namespace WFApi
         @"{""internalType"":""enum WFRights"",""name"":""action"",""type"":""uint8""},{""internalType"":""uint32"",""name"":""stateNow"",""type"":""uint32""},{""internalType"":""uint256[]"",""name"":""idsRmv"",""type"":""uint256[]""}," +
         @"{""internalType"":""uint256[]"",""name"":""idsAdd"",""type"":""uint256[]""},{""internalType"":""uint256[]"",""name"":""contentAdd"",""type"":""uint256[]""}],""stateMutability"":""view"",""type"":""function""},{""inputs"":[],""name"":""totalHistory"",""outputs"":[{""internalType"":""uint256"",""name"":"""",""type"":""uint256""}],""stateMutability"":""view"",""type"":""function""}]";
 
-        public const string BUILDER_ADDR = "0x4f610cd142dd40FAA73fCeDd03C40fDfa47502C4";
-        public const string MANAGER_ADDR = "0x99bAeF29dE85e3424d5b76937963B454eF8Ec7d2";
+        public const string BUILDER_ADDR_GETH = "0x4f610cd142dd40FAA73fCeDd03C40fDfa47502C4";
+        public const string MANAGER_ADDR_GETH = "0x99bAeF29dE85e3424d5b76937963B454eF8Ec7d2";
+        public const string BUILDER_ADDR_ROPSTEN = "0xE4748A963C000322EAcea28f4b43D7b3d15307e5";
+        public const string MANAGER_ADDR_ROPSTEN = "0x6Fa1d320a2835b0799c7231BBed7525c91Ef078b";
+
+        public static string BUILDER_ADDR { get; set; } = BUILDER_ADDR_ROPSTEN;
+        public static string MANAGER_ADDR { get; set; } = MANAGER_ADDR_ROPSTEN;
 
         public static BigInteger DefaultGasPrice()
         {

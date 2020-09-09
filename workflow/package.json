@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^1.0.43",
     "bignumber.js": "^9.0.0",
     "truffle-assertions": "^0.9.2",
     "truffle-events": "0.0.7"
