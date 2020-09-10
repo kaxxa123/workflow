@@ -18,16 +18,16 @@ namespace WFApi
     public class DocTypeInfo : IFunctionOutputDTO
     {
         [Parameter("uint32", "flags", 1)]
-        public UInt32 flags { get; set; }
+        public uint flags { get; set; }
 
         [Parameter("int32", "loLimit", 2)]
-        public Int32 loLimit { get; set; }
+        public int loLimit { get; set; }
 
         [Parameter("int32", "hiLimit", 3)]
-        public Int32 hiLimit { get; set; }
+        public int hiLimit { get; set; }
 
         [Parameter("int32", "count", 4)]
-        public Int32 count { get; set; }
+        public int count { get; set; }
     };
 
     [FunctionOutput]
@@ -40,7 +40,7 @@ namespace WFApi
         public uint action { get; set; }
 
         [Parameter("uint32", "stateNow", 3)]
-        public UInt32 stateNow { get; set; }
+        public uint stateNow { get; set; }
 
         [Parameter("uint256[]", "idsRmv", 4)]
         public List<BigInteger> idsRmv { get; set; }
@@ -63,10 +63,10 @@ namespace WFApi
             m_contract = wallet.W3.Eth.GetContract(WF.WORKFLOW_ABI, addr);
         }
 
-        public async Task<UInt32>       GetState()
+        public async Task<uint>       GetState()
         {
             var func = m_contract.GetFunction("state");
-            return await func.CallAsync<UInt32>();
+            return await func.CallAsync<uint>();
         }
 
         public async Task<WFMode>       GetMode()
@@ -94,7 +94,7 @@ namespace WFApi
             return await func.CallAsync<uint>();
         }
 
-        public async Task<DocTypeInfo>  GetDocProps(UInt32 docType)
+        public async Task<DocTypeInfo>  GetDocProps(uint docType)
         {
             var func = m_contract.GetFunction("getDocProps");
             return await func.CallDeserializingToObjectAsync<DocTypeInfo>(docType);
@@ -123,50 +123,50 @@ namespace WFApi
             return await func.CallAsync<BigInteger>(id);
         }
 
-        public async Task<BigInteger> EstimateInit(UInt32 nextState, BigInteger[] ids, BigInteger[] content, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateInit(uint usn, uint nextState, BigInteger[] ids, BigInteger[] content, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doInit");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState, ids, content);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState, ids, content);
 
             return WF.Estimate(gas, typ, gasPrice);
         }
-        public async Task<BigInteger> EstimateApprove(UInt32 nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateApprove(uint usn, uint nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doApprove");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
 
             return WF.Estimate(gas, typ, gasPrice);
         }
-        public async Task<BigInteger> EstimateReview(BigInteger[] idsRmv, BigInteger[] idsAdd, BigInteger[] contentAdd, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateReview(uint usn, BigInteger[] idsRmv, BigInteger[] idsAdd, BigInteger[] contentAdd, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doReview");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, idsRmv, idsAdd, contentAdd);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, idsRmv, idsAdd, contentAdd);
 
             return WF.Estimate(gas, typ, gasPrice);
         }
-        public async Task<BigInteger> EstimateSignoff(UInt32 nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateSignoff(uint usn, uint nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doSignoff");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
 
             return WF.Estimate(gas, typ, gasPrice);
         }
-        public async Task<BigInteger> EstimateAbort(UInt32 nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateAbort(uint usn, uint nextState, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doAbort");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
 
             return WF.Estimate(gas, typ, gasPrice);
         }
 
-        public async Task<string> DoInit(UInt32 nextState, BigInteger[] ids, BigInteger[] content, BigInteger? gasPrice = null)
+        public async Task<string> DoInit(uint usn, uint nextState, BigInteger[] ids, BigInteger[] content, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doInit");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState, ids, content);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState, ids, content);
             var weiGP = WF.FinalGasPrice(gasPrice);
             var recpt = await func.SendTransactionAndWaitForReceiptAsync(
                                         m_myWallet.Address, gas, weiGP, null, null,
-                                        nextState, ids, content);
+                                        usn, nextState, ids, content);
 
             if ((recpt == null) || (recpt.Status.Value == 0))
                 return null;
@@ -175,14 +175,14 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public async Task<string> DoApprove(UInt32 nextState, BigInteger? gasPrice = null)
+        public async Task<string> DoApprove(uint usn, uint nextState, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doApprove");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
             var weiGP = WF.FinalGasPrice(gasPrice);
             var recpt = await func.SendTransactionAndWaitForReceiptAsync(
                                         m_myWallet.Address, gas, weiGP, null, null,
-                                        nextState);
+                                        usn, nextState);
 
             if ((recpt == null) || (recpt.Status.Value == 0))
                 return null;
@@ -191,14 +191,14 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public async Task<string> DoReview(BigInteger[] idsRmv, BigInteger[] idsAdd, BigInteger[] contentAdd, BigInteger? gasPrice = null)
+        public async Task<string> DoReview(uint usn, BigInteger[] idsRmv, BigInteger[] idsAdd, BigInteger[] contentAdd, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doReview");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, idsRmv, idsAdd, contentAdd);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, idsRmv, idsAdd, contentAdd);
             var weiGP = WF.FinalGasPrice(gasPrice);
             var recpt = await func.SendTransactionAndWaitForReceiptAsync(
                                         m_myWallet.Address, gas, weiGP, null, null,
-                                        idsRmv, idsAdd, contentAdd);
+                                        usn, idsRmv, idsAdd, contentAdd);
 
             if ((recpt == null) || (recpt.Status.Value == 0))
                 return null;
@@ -207,14 +207,14 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public async Task<string> DoSignoff(UInt32 nextState, BigInteger? gasPrice = null)
+        public async Task<string> DoSignoff(uint usn, uint nextState, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doSignoff");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
             var weiGP = WF.FinalGasPrice(gasPrice);
             var recpt = await func.SendTransactionAndWaitForReceiptAsync(
                                         m_myWallet.Address, gas, weiGP, null, null,
-                                        nextState);
+                                        usn, nextState);
 
             if ((recpt == null) || (recpt.Status.Value == 0))
                 return null;
@@ -223,14 +223,14 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public async Task<string> DoAbort(UInt32 nextState, BigInteger? gasPrice = null)
+        public async Task<string> DoAbort(uint usn, uint nextState, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("doAbort");
-            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, nextState);
+            var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, usn, nextState);
             var weiGP = WF.FinalGasPrice(gasPrice);
             var recpt = await func.SendTransactionAndWaitForReceiptAsync(
                                         m_myWallet.Address, gas, weiGP, null, null,
-                                        nextState);
+                                        usn, nextState);
 
             if ((recpt == null) || (recpt.Status.Value == 0))
                 return null;
@@ -239,7 +239,7 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public BigInteger MakeDocId(UInt32 docType, uint id)
+        public BigInteger MakeDocId(uint docType, uint id)
         {
             BigInteger num = new BigInteger(id);
             num  = num << 32;

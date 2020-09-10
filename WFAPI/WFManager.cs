@@ -16,9 +16,9 @@ namespace WFApi
 
     public struct DocSet
     {
-        public UInt32 flags;
-        public UInt32 hiLimit;
-        public UInt32 loLimit; 
+        public uint flags;
+        public uint hiLimit;
+        public uint loLimit; 
     };
 
     [FunctionOutput]

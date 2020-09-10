@@ -36,37 +36,37 @@ namespace WFApi
             m_contract = wallet.W3.Eth.GetContract(WF.BUILDER_ABI, WF.BUILDER_ADDR);
         }
 
-        public async Task<UInt32> GetEndState(UInt32 initial, UInt32 edge)
+        public async Task<uint> GetEndState(uint initial, uint edge)
         {
             var func = m_contract.GetFunction("states");
-            return await func.CallAsync<UInt32>(initial, edge);
+            return await func.CallAsync<uint>(initial, edge);
         }
 
-        public async Task<UInt32> GetTotalStates()
+        public async Task<uint> GetTotalStates()
         {
             var func = m_contract.GetFunction("getTotalStates");
-            return await func.CallAsync<UInt32>();
+            return await func.CallAsync<uint>();
         }
 
-        public async Task<UInt32> GetTotalEdges(UInt32 stateid)
+        public async Task<uint> GetTotalEdges(uint stateid)
         {
             var func = m_contract.GetFunction("getTotalEdges");
-            return await func.CallAsync<UInt32>(stateid);
+            return await func.CallAsync<uint>(stateid);
         }
 
-        public async Task<UInt32> GetTotalRights(UInt32 stateid, UInt32 edgeid)
+        public async Task<uint> GetTotalRights(uint stateid, uint edgeid)
         {
             var func = m_contract.GetFunction("getTotalRights");
-            return await func.CallAsync<UInt32>(stateid, edgeid);
+            return await func.CallAsync<uint>(stateid, edgeid);
         }
 
-        public async Task<GetRightOutput> GetRight(UInt32 stateid, UInt32 edgeid, UInt32 rightid)
+        public async Task<GetRightOutput> GetRight(uint stateid, uint edgeid, uint rightid)
         {
             var func = m_contract.GetFunction("getRight");
             return await func.CallDeserializingToObjectAsync<GetRightOutput>(stateid, edgeid, rightid);
         }
 
-        public async Task<bool> HasRight(UInt32 state1, UInt32 state2, string user, WFRights right)
+        public async Task<bool> HasRight(uint state1, uint state2, string user, WFRights right)
         {
             var func = m_contract.GetFunction("hasRight");
             return await func.CallAsync<bool>(state1, state2, user, right);
@@ -78,7 +78,7 @@ namespace WFApi
             return await func.CallAsync<uint>();
         }
 
-        public async Task<BigInteger> EstimateAddRight(UInt32 stateid, UInt32 edgeid, string user, WFRights right, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateAddRight(uint stateid, uint edgeid, string user, WFRights right, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("addRight");
             var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, stateid, edgeid, user, right);
@@ -86,7 +86,7 @@ namespace WFApi
             return WF.Estimate(gas, typ, gasPrice);
         }
 
-        public async Task<BigInteger> EstimateRemoveRight(UInt32 stateid, UInt32 edgeid, string user, WFRights right, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
+        public async Task<BigInteger> EstimateRemoveRight(uint stateid, uint edgeid, string user, WFRights right, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("removeRight");
             var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, stateid, edgeid, user, right);
@@ -94,7 +94,7 @@ namespace WFApi
             return WF.Estimate(gas, typ, gasPrice);
         }
 
-        public async Task<string> AddRight(UInt32 stateid, UInt32 edgeid, string user, WFRights right, BigInteger? gasPrice = null)
+        public async Task<string> AddRight(uint stateid, uint edgeid, string user, WFRights right, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("addRight");
             var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, stateid, edgeid, user, right);
@@ -110,7 +110,7 @@ namespace WFApi
             return recpt.TransactionHash;
         }
 
-        public async Task<string> RemoveRight(UInt32 stateid, UInt32 edgeid, string user, WFRights right, BigInteger? gasPrice = null)
+        public async Task<string> RemoveRight(uint stateid, uint edgeid, string user, WFRights right, BigInteger? gasPrice = null)
         {
             Nethereum.Contracts.Function func = m_contract.GetFunction("removeRight");
             var gas = await func.EstimateGasAsync(m_myWallet.Address, null, null, stateid, edgeid, user, right);
@@ -130,14 +130,14 @@ namespace WFApi
         {
             List<string> addrList = new List<string>();
 
-            UInt32 states = await GetTotalStates();
-            for (UInt32 cntStates = 0; cntStates < states; ++cntStates)
+            uint states = await GetTotalStates();
+            for (uint cntStates = 0; cntStates < states; ++cntStates)
             {
-                UInt32 edges = await GetTotalEdges(cntStates);
-                for (UInt32 cntEdges = 0; cntEdges < edges; ++cntEdges)
+                uint edges = await GetTotalEdges(cntStates);
+                for (uint cntEdges = 0; cntEdges < edges; ++cntEdges)
                 {
-                    UInt32 rights = await GetTotalRights(cntStates, cntEdges);
-                    for (UInt32 cntRights = 0; cntRights < rights; ++cntRights)
+                    uint rights = await GetTotalRights(cntStates, cntEdges);
+                    for (uint cntRights = 0; cntRights < rights; ++cntRights)
                     {
                         GetRightOutput rightInfo = await GetRight(cntStates, cntEdges, cntRights);
 
