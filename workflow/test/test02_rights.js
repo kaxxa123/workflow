@@ -20,6 +20,9 @@ contract('Testing Rights', function (accounts) {
         await wf.addState([]);
         await wf.doFinalize();
 
+        let isFinal = await wf.finalized();
+        assert(isFinal, "Should be Final!")
+
         //Cannot add states once final
         await HlpFail.testFail("wf.addState", "Workflow is final", async () => { 
             await wf.addState([1]);

@@ -1,5 +1,3 @@
 build
 node_modules
-
-private_geth.txt
-.secret*
+extra

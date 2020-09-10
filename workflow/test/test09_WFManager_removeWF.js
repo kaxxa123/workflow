@@ -72,11 +72,11 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
         await setupStateEngine(engine);
 
         let wf = await Workflow.at(wfAddr);
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
-        await wf.doApprove(3, {from: accounts[2]})
+        await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doApprove(1, 2, {from: accounts[1]})
+        await wf.doApprove(2, 3, {from: accounts[2]})
 
-        recpt = await wf.doSignoff(4, {from: accounts[1]});
+        recpt = await wf.doSignoff(3, 4, {from: accounts[1]});
 
         let recpt2 = recpt;
         recpt2.receipt.logs = recpt2.receipt.rawLogs;
@@ -141,10 +141,10 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
 
         let retAddr = await mgr.readWF(first, 1);
         let wf = await Workflow.at(retAddr.addrList[0]);
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
-        await wf.doApprove(3, {from: accounts[2]})
-        recpt = await wf.doSignoff(4, {from: accounts[1]});
+        await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doApprove(1, 2, {from: accounts[1]})
+        await wf.doApprove(2, 3, {from: accounts[2]})
+        recpt = await wf.doSignoff(3, 4, {from: accounts[1]});
 
         let recpt2 = recpt;
         recpt2.receipt.logs = recpt2.receipt.rawLogs;
@@ -171,10 +171,10 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
 
         let retAddr = await mgr.readWF(last, 1);
         let wf = await Workflow.at(retAddr.addrList[0]);
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
-        await wf.doApprove(3, {from: accounts[2]})
-        recpt = await wf.doSignoff(4, {from: accounts[1]});
+        await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doApprove(1, 2, {from: accounts[1]})
+        await wf.doApprove(2, 3, {from: accounts[2]})
+        recpt = await wf.doSignoff(3, 4, {from: accounts[1]});
 
         let recpt2 = recpt;
         recpt2.receipt.logs = recpt2.receipt.rawLogs;

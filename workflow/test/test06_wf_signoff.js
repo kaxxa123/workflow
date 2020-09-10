@@ -60,44 +60,54 @@ contract('Testing Workflow SignOff', function (accounts) {
         await engine.addRight(3, 3, accounts[1], WFRights.SIGNOFF);    //S3 -> S4
         await engine.addRight(3, 4, accounts[1], WFRights.ABORT);      //S3 -> S5
 
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
-        await wf.doApprove(3, {from: accounts[2]})
-        await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
-        await wf.doReview([], [makeDocID(2, 0x333)], [0x333], {from: accounts[1]});
-        await wf.doReview([], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
-        await wf.doReview([makeDocID(2, 0x333), makeDocID(1, 2001)], [], [], {from: accounts[1]});
+        await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doApprove(1, 2, {from: accounts[1]})
+        await wf.doApprove(2, 3, {from: accounts[2]})
+        await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
+        await wf.doReview(4, [], [makeDocID(2, 0x333)], [0x333], {from: accounts[1]});
+        await wf.doReview(5, [], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
+        await wf.doReview(6, [makeDocID(2, 0x333), makeDocID(1, 2001)], [], [], {from: accounts[1]});
 
     });
 
     it('Should fail to SignOff WF', async () => {
         let wf = await Workflow.at(wfAddr);
 
+        //Incorrect USN
+        await HlpFail.testFail("wf.doSignoff", "USN mismatch", async () => { 
+            await wf.doSignoff(0, 4) 
+        });
+
+        //Incorrect USN
+        await HlpFail.testFail("wf.doSignoff", "USN mismatch", async () => { 
+            await wf.doSignoff(8, 4) 
+        });
+
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doSignoff", "Unauthorized state crossing", async () => { 
-            await wf.doSignoff(4) 
+            await wf.doSignoff(7, 4) 
         });
 
         //S3 -> S2 is Approve not a Sign-Off edge
         await HlpFail.testFail("wf.doSignoff", "Unauthorized state crossing", async () => { 
-            await wf.doSignoff(2, {from: accounts[1]}) 
+            await wf.doSignoff(7, 2, {from: accounts[1]}) 
         });
 
         //S3 -> S5 is Abort not a Sign-Off edge
         await HlpFail.testFail("wf.doSignoff", "Unauthorized state crossing", async () => { 
-            await wf.doSignoff(5, {from: accounts[1]}) 
+            await wf.doSignoff(7, 5, {from: accounts[1]}) 
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doSignoff", "Non-existing state", async () => { 
-            await wf.doSignoff(15, {from: accounts[1]}) 
+            await wf.doSignoff(7, 15, {from: accounts[1]}) 
         });
     });
 
     it('Should Cross State to SignOff Ok', async () => {
         let wf = await Workflow.at(wfAddr);
 
-        await wf.doSignoff(4, {from: accounts[1]});
+        await wf.doSignoff(7, 4, {from: accounts[1]});
 
         state = await wf.state()
         mode = await wf.mode()

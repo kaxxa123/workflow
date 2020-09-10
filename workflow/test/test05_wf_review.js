@@ -60,58 +60,68 @@ contract('Testing Workflow Review', function (accounts) {
         await engine.addRight(3, 3, accounts[1], WFRights.SIGNOFF);    //S3 -> S4
         await engine.addRight(3, 4, accounts[1], WFRights.ABORT);      //S3 -> S5
 
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
-        await wf.doApprove(3, {from: accounts[2]})
+        await wf.doInit(0,1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doApprove(1,2, {from: accounts[1]})
+        await wf.doApprove(2,3, {from: accounts[2]})
     });
 
     it('Should fail to Review WF', async () => {
 
         let wf = await Workflow.at(wfAddr);
 
+        //Incorrect USN
+        await HlpFail.testFail("wf.doReview", "USN mismatch", async () => { 
+            await wf.doReview(2, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[0]});
+        });
+
+        //Incorrect USN
+        await HlpFail.testFail("wf.doReview", "USN mismatch", async () => { 
+            await wf.doReview(5, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[0]});
+        });
+
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doReview", "Unauthorized state crossing", async () => { 
-            await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[0]});
+            await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[0]});
         });
 
         //Review action is not submitting any updates
         await HlpFail.testFail("wf.doReview", "No changes submitted", async () => { 
-            await wf.doReview([], [], [], {from: accounts[1]});
+            await wf.doReview(3, [], [], [], {from: accounts[1]});
         });
 
         //idsAdd and contentAdd arrays must have a matching length
         await HlpFail.testFail("wf.doReview", "ids/content array length mismatch", async () => { 
-            await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112,0x113], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112,0x113], {from: accounts[1]});
         });
 
         //Cannot remove non-existing id: makeDocID(9, 101)
         await HlpFail.testFail("wf.doReview", "Doc not found", async () => { 
-            await wf.doReview([makeDocID(9, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(9, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
         });
 
         //Cannot add doc with unknown docType: makeDocID(9, 2000)
         await HlpFail.testFail("wf.doReview", "Invalid doc type", async () => { 
-            await wf.doReview([makeDocID(1, 101)], [makeDocID(9, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(9, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
         });
 
         //Cannot add/update with invalid hash
         await HlpFail.testFail("wf.doReview", "Invalid doc hash", async () => { 
-            await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0], {from: accounts[1]});
         });
 
         //docType=1 allows for max 2 documents
         await HlpFail.testFail("wf.doReview", "Doc type count exceeded limit", async () => { 
-            await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001), makeDocID(1, 2002)], [0x111,0x112,0x113], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001), makeDocID(1, 2002)], [0x111,0x112,0x113], {from: accounts[1]});
         });
 
         //Removing required docType 0
         await HlpFail.testFail("wf.doReview", "Required files missing", async () => { 
-            await wf.doReview([makeDocID(0, 1000)], [], [], {from: accounts[1]});
+            await wf.doReview(3, [makeDocID(0, 1000)], [], [], {from: accounts[1]});
         });
 
         //docType 3 has a minimum of 2. Cannot add just one.
         await HlpFail.testFail("wf.doReview", "Required files missing", async () => { 
-            await wf.doReview([], [makeDocID(3, 1000)], [0x1111], {from: accounts[1]});
+            await wf.doReview(3, [], [makeDocID(3, 1000)], [0x1111], {from: accounts[1]});
         });
     });
 
@@ -119,25 +129,25 @@ contract('Testing Workflow Review', function (accounts) {
         let engine = await WorkflowBuilder.deployed();
         let wf = await Workflow.at(wfAddr);
 
-        await wf.doReview([makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
-        await wf.doReview([], [makeDocID(2, 0x333)], [0x333], {from: accounts[1]});
+        await wf.doReview(3, [makeDocID(1, 101)], [makeDocID(1, 2000), makeDocID(1, 2001)], [0x111,0x112], {from: accounts[1]});
+        await wf.doReview(4, [], [makeDocID(2, 0x333)], [0x333], {from: accounts[1]});
 
         //Remove user right and see it fail...
         await engine.removeRight(3, 2, accounts[1], WFRights.REVIEW);       //S3 -> S3
         await HlpFail.testFail("wf.doReview", "Unauthorized state crossing", async () => { 
-            await wf.doReview([], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
+            await wf.doReview(5, [], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
         });
 
         //Add different user right and see old user fail new user succeed...
         await engine.addRight(3, 2, accounts[3], WFRights.REVIEW);          //S3 -> S3
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doReview([], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
+            await wf.doReview(5, [], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[1]});
         });
-        await wf.doReview([], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[3]});
+        await wf.doReview(5, [], [makeDocID(3, 0x444), makeDocID(3, 0x555)], [0x444,0x555], {from: accounts[3]});
 
         //Add another user...
         await engine.addRight(3, 2, accounts[4], WFRights.REVIEW);          //S3 -> S3
-        await wf.doReview([makeDocID(2, 0x333), makeDocID(1, 2001)], [], [], {from: accounts[4]});
+        await wf.doReview(6, [makeDocID(2, 0x333), makeDocID(1, 2001)], [], [], {from: accounts[4]});
 
         state = await wf.state()
         mode = await wf.mode()

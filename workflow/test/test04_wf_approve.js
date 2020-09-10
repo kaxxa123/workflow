@@ -60,26 +60,36 @@ contract('Testing Workflow Approve', function (accounts) {
         await engine.addRight(3, 3, accounts[1], WFRights.SIGNOFF);    //S3 -> S4
         await engine.addRight(3, 4, accounts[1], WFRights.ABORT);      //S3 -> S5
 
-        await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
     });
 
     it('Should fail to Approve WF', async () => {
 
         let wf = await Workflow.at(wfAddr);
 
+        //Incorrect USN
+        await HlpFail.testFail("wf.doApprove", "USN mismatch", async () => { 
+            await wf.doApprove(0, 2) 
+        });
+
+        //Incorrect USN
+        await HlpFail.testFail("wf.doApprove", "USN mismatch", async () => { 
+            await wf.doApprove(2, 2) 
+        });
+
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(2) 
+            await wf.doApprove(1, 2) 
         });
 
         //No edge between S1 and S3
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(3, {from: accounts[1]}) 
+            await wf.doApprove(1, 3, {from: accounts[1]}) 
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doApprove", "Non-existing state", async () => { 
-            await wf.doApprove(15, {from: accounts[1]}) 
+            await wf.doApprove(1, 15, {from: accounts[1]}) 
         });
     });
 
@@ -88,38 +98,38 @@ contract('Testing Workflow Approve', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //From S1 only only an Approve action is configured
-        await HlpFail.testFail("wf.doInit", "Unauthorized state crossing", async () => { 
-            await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await HlpFail.testFail("wf.doInit", "Only when UNINIT", async () => { 
+            await wf.doInit(1, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
         });
 
         //S15 does not exist
-        await HlpFail.testFail("wf.doInit", "Non-existing state", async () => { 
-            await wf.doInit(15, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
+        await HlpFail.testFail("wf.doInit", "Only when UNINIT", async () => { 
+            await wf.doInit(1, 15, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[1]})
         });
 
         //From S1 only only an Approve action is configured
         await HlpFail.testFail("wf.doReview", "Unauthorized state crossing", async () => { 
-            await wf.doReview([1],[1],[1], {from: accounts[1]})
+            await wf.doReview(1, [1],[1],[1], {from: accounts[1]})
         });
 
         //From S1 only only an Approve action is configured
         await HlpFail.testFail("wf.doSignoff", "Unauthorized state crossing", async () => { 
-            await wf.doSignoff(1, {from: accounts[1]})
+            await wf.doSignoff(1, 1, {from: accounts[1]})
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doSignoff", "Non-existing state", async () => { 
-            await wf.doSignoff(15, {from: accounts[1]})
+            await wf.doSignoff(1, 15, {from: accounts[1]})
         });
 
         //From S1 only only an Approve action is configured
         await HlpFail.testFail("wf.doAbort", "Unauthorized state crossing", async () => { 
-            await wf.doAbort(1, {from: accounts[1]})
+            await wf.doAbort(1, 1, {from: accounts[1]})
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doAbort", "Non-existing state", async () => { 
-            await wf.doAbort(15, {from: accounts[1]})
+            await wf.doAbort(1, 15, {from: accounts[1]})
         });
     });
 
@@ -127,7 +137,7 @@ contract('Testing Workflow Approve', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //S1 -> S2
-        await wf.doApprove(2, {from: accounts[1]})
+        await wf.doApprove(1, 2, {from: accounts[1]})
 
         let state = await wf.state()
         let mode = await wf.mode()
@@ -139,7 +149,7 @@ contract('Testing Workflow Approve', function (accounts) {
         assert(totHist == 2, "Total history should be 1");
 
         //S2 -> S3
-        await wf.doApprove(3, {from: accounts[2]})
+        await wf.doApprove(2, 3, {from: accounts[2]})
 
         state = await wf.state()
         mode = await wf.mode()
@@ -151,8 +161,8 @@ contract('Testing Workflow Approve', function (accounts) {
         assert(totHist == 3, "Total history should be 1");
 
         //S3 -> S1 -> S2
-        await wf.doApprove(1, {from: accounts[1]})
-        await wf.doApprove(2, {from: accounts[1]})
+        await wf.doApprove(3, 1, {from: accounts[1]})
+        await wf.doApprove(4, 2, {from: accounts[1]})
 
         state = await wf.state()
         mode = await wf.mode()
@@ -173,17 +183,17 @@ contract('Testing Workflow Approve', function (accounts) {
 
         //Sender has no Right to perform this action
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(2) 
+            await wf.doApprove(5, 2) 
         });
 
         //Edge between S2 to S4 does not exist
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(4, {from: accounts[2]}) 
+            await wf.doApprove(5, 4, {from: accounts[2]}) 
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doApprove", "Non-existing state", async () => { 
-            await wf.doApprove(15, {from: accounts[2]}) 
+            await wf.doApprove(5, 15, {from: accounts[2]}) 
         });
     });
 
@@ -192,38 +202,38 @@ contract('Testing Workflow Approve', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //From S2 only only an Approve action is configured
-        await HlpFail.testFail("wf.doInit", "Unauthorized state crossing", async () => { 
-            await wf.doInit(1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[2]})
+        await HlpFail.testFail("wf.doInit", "Only when UNINIT", async () => { 
+            await wf.doInit(5, 1, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[2]})
         });
 
         //S15 does not exist
-        await HlpFail.testFail("wf.doInit", "Non-existing state", async () => { 
-            await wf.doInit(15, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[2]})
+        await HlpFail.testFail("wf.doInit", "Only when UNINIT", async () => { 
+            await wf.doInit(5, 15, [makeDocID(0, 1000), makeDocID(1, 101)], [0x111,0x112], {from: accounts[2]})
         });
 
         //From S2 only only an Approve action is configured
         await HlpFail.testFail("wf.doReview", "Unauthorized state crossing", async () => { 
-            await wf.doReview([1],[1],[1], {from: accounts[2]})
+            await wf.doReview(5, [1],[1],[1], {from: accounts[2]})
         });
 
         //From S2 only only an Approve action is configured
         await HlpFail.testFail("wf.doSignoff", "Unauthorized state crossing", async () => { 
-            await wf.doSignoff(1, {from: accounts[2]})
+            await wf.doSignoff(5, 1, {from: accounts[2]})
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doSignoff", "Non-existing state", async () => { 
-            await wf.doSignoff(15, {from: accounts[2]})
+            await wf.doSignoff(5, 15, {from: accounts[2]})
         });
 
         //From S2 only only an Approve action is configured
         await HlpFail.testFail("wf.doAbort", "Unauthorized state crossing", async () => { 
-            await wf.doAbort(1, {from: accounts[2]})
+            await wf.doAbort(5, 1, {from: accounts[2]})
         });
 
         //S15 does not exist
         await HlpFail.testFail("wf.doAbort", "Non-existing state", async () => { 
-            await wf.doAbort(15, {from: accounts[2]})
+            await wf.doAbort(5, 15, {from: accounts[2]})
         });
     });
 
@@ -232,23 +242,23 @@ contract('Testing Workflow Approve', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //S2 -> S3 -> S2 -> S3 -> S2
-        await wf.doApprove(3, {from: accounts[2]});
-        await wf.doApprove(2, {from: accounts[1]});
-        await wf.doApprove(3, {from: accounts[2]});
-        await wf.doApprove(2, {from: accounts[1]});
+        await wf.doApprove(5, 3, {from: accounts[2]});
+        await wf.doApprove(6, 2, {from: accounts[1]});
+        await wf.doApprove(7, 3, {from: accounts[2]});
+        await wf.doApprove(8, 2, {from: accounts[1]});
 
         //Remove user right and see it fail...
         await engine.removeRight(2, 0, accounts[2], WFRights.APPROVE);        //S2 -> S3
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(3, {from: accounts[2]}); 
+            await wf.doApprove(9, 3, {from: accounts[2]}); 
         });
 
         //Add different user right and see old user fail new user succeed...
         await engine.addRight(2, 0, accounts[3], WFRights.APPROVE);           //S2 -> S3
         await HlpFail.testFail("wf.doApprove", "Unauthorized state crossing", async () => { 
-            await wf.doApprove(3, {from: accounts[2]}); 
+            await wf.doApprove(9, 3, {from: accounts[2]}); 
         });
-        await wf.doApprove(3, {from: accounts[3]});
+        await wf.doApprove(9, 3, {from: accounts[3]});
 
         state = await wf.state()
         mode = await wf.mode()

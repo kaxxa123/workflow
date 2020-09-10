@@ -16,7 +16,7 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     //For each edge we store an array of rights
     //Key = <initial state><edge index>
     //Value = Array of Rights - [<right><address>]
-    mapping(uint256 => uint256[]) public rights;
+    mapping(uint256 => uint256[]) private rights;
 
     //Universal Sequence Number allowing us to quickly see if the WF changed
     uint256 public  usn;

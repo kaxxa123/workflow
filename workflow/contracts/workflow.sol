@@ -79,12 +79,14 @@ contract Workflow {
     }
 
     /// @dev Perform first state transition moving the WF from unintialized to initialized
+    /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
     /// @param ids a list of document ids to initialize the WF with
     /// @param content a list of document hashes to initialize the WF with
-    function doInit(uint32 nextState, uint256[] calldata ids, uint256[] calldata content) external {
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.INIT), "Unauthorized state crossing");
+    function doInit(uint256 usn, uint32 nextState, uint256[] calldata ids, uint256[] calldata content) external {
+        require(usn == history.length,"USN mismatch");
         require(mode == WFMode.UNINIT,"Only when UNINIT");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.INIT), "Unauthorized state crossing");
 
         //ids and content include the first doc version the workflow will work on
         //We need to:
@@ -124,10 +126,12 @@ contract Workflow {
     }
 
     /// @dev Approve documents allowing the WF to move to the next state
+    /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
-    function doApprove(uint32 nextState) external {
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.APPROVE), "Unauthorized state crossing");
+    function doApprove(uint256 usn, uint32 nextState) external {
+        require(usn == history.length,"USN mismatch");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.APPROVE), "Unauthorized state crossing");
         
         uint256[] memory empty;
         history.push(HistoryInfo({
@@ -142,15 +146,17 @@ contract Workflow {
     }
 
     /// @dev Submit document updates including adding, updating and removal of docs
+    /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param idsRmv list of ids for docs to remove
     /// @param idsAdd list of ids for docs to add/update
     /// @param contentAdd list of doc hashes to add/update
-    function doReview( uint256[] calldata idsRmv, 
+    function doReview(uint256 usn, uint256[] calldata idsRmv, 
                        uint256[] calldata idsAdd, 
                        uint256[] calldata contentAdd) external { 
 
-        require(engine.hasRight(state, state, msg.sender, WFRights.REVIEW), "Unauthorized state crossing");
+        require(usn == history.length,"USN mismatch");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+        require(engine.hasRight(state, state, msg.sender, WFRights.REVIEW), "Unauthorized state crossing");
 
         uint totRmv = idsRmv.length;
         uint totAdd = idsAdd.length;
@@ -202,10 +208,12 @@ contract Workflow {
     }
 
     /// @dev Conclude WF with a successful sign-off
+    /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
-    function doSignoff(uint32 nextState) external {
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.SIGNOFF), "Unauthorized state crossing");
+    function doSignoff(uint256 usn, uint32 nextState) external {
+        require(usn == history.length,"USN mismatch");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.SIGNOFF), "Unauthorized state crossing");
 
         uint256[] memory empty;
         history.push(HistoryInfo({
@@ -222,10 +230,12 @@ contract Workflow {
     }
 
     /// @dev Abort WF
+    /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
-    function doAbort(uint32 nextState) external {
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.ABORT), "Unauthorized state crossing");
+    function doAbort(uint256 usn, uint32 nextState) external {
+        require(usn == history.length,"USN mismatch");
         require(mode == WFMode.RUNNING,"Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.ABORT), "Unauthorized state crossing");
 
         uint256[] memory empty;
         history.push(HistoryInfo({
