@@ -34,9 +34,9 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
 
     /// @dev Append a new state.
     /// @param edges an array of edges identifying the set of connected state
-    function addState(uint32[] memory edges) public {
-        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
-        require(!finalized, "Workflow is final");
+    function addState(uint32[] calldata edges) external {
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "WFBuilder: Unauthorized");
+        require(!finalized, "WFBuilder: Workflow is final");
         states.push();
         states[states.length-1] = edges;
         ++usn;
@@ -44,8 +44,8 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
 
     /// @dev Mark state engine structure as final
     function doFinalize() external {
-        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
-
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "WFBuilder: Unauthorized");
+        require(!finalized, "WFBuilder: Workflow is final");
         //Basic state engine validation. 
         //Make sure all edges refer to a valid End State
         uint uTotStates = states.length;
@@ -55,8 +55,8 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
 
             for(uint uEdges = 0; uEdges < uTotEdges; ++uEdges) {
                 uint endState = edges[uEdges];
-                require(endState != 0,"Edge cannot point to State Zero");
-                require(endState < uTotStates,"Edge points to non-existing State");
+                require(endState != 0,"WFBuilder: Edge cannot point to State Zero");
+                require(endState < uTotStates,"WFBuilder: Edge points to non-existing State");
             }
         }
 
@@ -69,11 +69,11 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @param user address of user to whom the right is being assigned
     /// @param right the right being assigned
     function addRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
-        require(finalized, "Workflow is not final");
-        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
-        require(stateid < states.length, "Non-existing state");
-        require(edgeid < states[stateid].length, "Non-existing edge");
-        require(isValidRight(stateid,states[stateid][edgeid],right), "Right not allowed for this edge");
+        require(finalized, "WFBuilder: Workflow is not final");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "WFBuilder: Unauthorized");
+        require(stateid < states.length, "WFBuilder: Non-existing state");
+        require(edgeid < states[stateid].length, "WFBuilder: Non-existing edge");
+        require(isValidRight(stateid,states[stateid][edgeid],right), "WFBuilder: Right not allowed for this edge");
 
         uint256 rightKey = makeRightsKey(stateid,edgeid);
         uint256 rigthVal = makeRightsValue(user, right);
@@ -82,7 +82,7 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
 
         if (edgeRights.length > 0) {
             WFRights right0 = WFRights(edgeRights[0] >> 160);
-            require(right == right0, "Inconsistent rights");
+            require(right == right0, "WFBuilder: Inconsistent rights");
         }
 
         edgeRights.push(rigthVal);
@@ -95,10 +95,10 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @param user address of user whose right is being revoked
     /// @param right the right being revoked
     function removeRight(uint32 stateid, uint32 edgeid, address user, WFRights right) external {
-        require(finalized, "Workflow is not final");
-        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "Unauthorized");
-        require(stateid < states.length, "Non-existing state");
-        require(edgeid < states[stateid].length, "Non-existing edge");
+        require(finalized, "WFBuilder: Workflow is not final");
+        require(hasRole(WF_SCHEMA_ADMIN_ROLE, msg.sender), "WFBuilder: Unauthorized");
+        require(stateid < states.length, "WFBuilder: Non-existing state");
+        require(edgeid < states[stateid].length, "WFBuilder: Non-existing edge");
 
         uint256 rightKey = makeRightsKey(stateid,edgeid);
         uint256 rigthVal = makeRightsValue(user, right);
@@ -121,7 +121,7 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
             }
         }
 
-        revert("User/Right not found");        
+        revert("WFBuilder: User/Right not found");        
     }
 
     /// @dev Get total defined states
@@ -134,7 +134,7 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @param stateid state index. Defined on calling addState. First state gets index 0, next 1 etc,
     /// @return total edges for given state
     function getTotalEdges(uint32 stateid) external view returns (uint32) {
-        require(stateid < states.length, "Non-existing state");
+        require(stateid < states.length, "WFBuilder: Non-existing state");
         return uint32(states[stateid].length);
     }
 
@@ -143,8 +143,8 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @param edgeid edge index. This matches the array of edges fed to addState
     /// @return total rights for given edge
     function getTotalRights(uint32 stateid, uint32 edgeid) external view returns (uint32) {
-        require(stateid < states.length, "Non-existing state");
-        require(edgeid < states[stateid].length, "Non-existing edge");
+        require(stateid < states.length, "WFBuilder: Non-existing state");
+        require(edgeid < states[stateid].length, "WFBuilder: Non-existing edge");
 
         uint256 rightKey = makeRightsKey(stateid,edgeid);
         return uint32(rights[rightKey].length);
@@ -157,8 +157,8 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @param right right being queried
     /// @return true if right is present, false otherwise
     function hasRight(uint32 state1, uint32 state2, address user, WFRights right) override external view returns (bool) {
-        require(state1 < states.length, "Non-existing state");
-        require(state2 < states.length, "Non-existing state");
+        require(state1 < states.length, "WFBuilder: Non-existing state");
+        require(state2 < states.length, "WFBuilder: Non-existing state");
 
         uint rigthVal = makeRightsValue(user, right);
         for (uint32 uECnt = 0; uECnt < states[state1].length; ++uECnt) {
@@ -185,12 +185,12 @@ contract WorkflowBuilder is IStateEngine, AccessControl {
     /// @return user address to whom right applies
     /// @return right user right
     function getRight(uint32 stateid, uint32 edgeid, uint32 rightid) external view returns(address user, WFRights right) {
-        require(stateid < states.length, "Non-existing state");
-        require(edgeid < states[stateid].length, "Non-existing edge");
+        require(stateid < states.length, "WFBuilder: Non-existing state");
+        require(edgeid < states[stateid].length, "WFBuilder: Non-existing edge");
 
         uint rightKey = makeRightsKey(stateid,edgeid);
 
-        require(rightid < rights[rightKey].length, "Non-existing Right");
+        require(rightid < rights[rightKey].length, "WFBuilder: Non-existing Right");
 
         user  = address(rights[rightKey][rightid]);
         right = WFRights(rights[rightKey][rightid] >> 160);

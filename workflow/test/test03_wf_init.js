@@ -77,48 +77,48 @@ contract('Testing Workflow Init', function (accounts) {
         await wfhlp.showDocSet(wf)
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doInit", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: USN mismatch", async () => { 
             await wf.doInit(1, 1, [makeDocID(doctype=0,id=0), makeDocID(1, 1)], [0x111,0x112]) 
         });
 
         //Sender has no Right to perform this action
-        await HlpFail.testFail("wf.doInit", "Unauthorized state crossing", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Unauthorized state crossing", async () => { 
             await wf.doInit(0, 1, [makeDocID(doctype=0,id=0), makeDocID(1, 1)], [0x111,0x112]) 
         });
 
         //Invalid parameters - ids array longer the content array
-        await HlpFail.testFail("wf.doInit", "ids/content array length mismatch", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: ids/content array length mismatch", async () => { 
             await wf.doInit(0, 1, [makeDocID(0, 230), makeDocID(1, 124), makeDocID(2, 123)], [0x111,0x112], {from: accounts[1]}) 
         });
 
         //DocType=5 is invalid
-        await HlpFail.testFail("wf.doInit", "Invalid doc type", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Invalid doc type", async () => { 
             await wf.doInit(0, 1, [makeDocID(1, 111), makeDocID(5, 151)], [0x111,0x112], {from: accounts[1]}) 
         });
 
         //Doc hash cannot be zero
-        await HlpFail.testFail("wf.doInit", "Invalid doc hash", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Invalid doc hash", async () => { 
             await wf.doInit(0, 1, [makeDocID(0, 100), makeDocID(1, 221)], [0x111,0], {from: accounts[1]}) 
         });
 
         //Cannot have 3 documents of type 2 (2 is upper limit)
-        await HlpFail.testFail("wf.doInit", "Doc type count exceeded limit", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Doc type count exceeded limit", async () => { 
             await wf.doInit(0, 1, [makeDocID(2, 111), makeDocID(2, 222), makeDocID(2, 333)], [0x111,0x112,0x113], {from: accounts[1]}) 
         });
 
         //Cannot add 2 docs with same id
-        await HlpFail.testFail("wf.doInit", "Initializing same ID x times", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Initializing same ID x times", async () => { 
             await wf.doInit(0, 1, [makeDocID(0, 100), makeDocID(1, 101), makeDocID(1, 101)], [0x111,0x112,0x113], {from: accounts[1]}) 
         });
 
         //DocType 1 is marked as required but it's not included in doInit
-        await HlpFail.testFail("wf.doInit", "Required files missing", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Required files missing", async () => { 
             await wf.doInit(0, 1, [makeDocID(0, 100), makeDocID(2, 101)], [0x111,0x112], {from: accounts[1]})
         });
 
         //DocType 3 is not required. However it has a minimum set to 2. However doInit is only supplied with 1 such docType
         //When a DocType is not required we can either have Zero or at least match the minimum limit.
-        await HlpFail.testFail("wf.doInit", "Required files missing", async () => { 
+        await HlpFail.testFail("wf.doInit", "Workflow: Required files missing", async () => { 
             await wf.doInit(0, 1, [makeDocID(0, 1000), makeDocID(1, 101), makeDocID(3, 101)], [0x111,0x112,0x113], {from: accounts[1]})
         });
     });
@@ -127,57 +127,57 @@ contract('Testing Workflow Init', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doApprove", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doApprove", "Workflow: USN mismatch", async () => { 
             await wf.doApprove(1, 1, {from: accounts[1]})
         });
 
         //From S0 only a doInit is allowed
-        await HlpFail.testFail("wf.doApprove", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doApprove", "Workflow: Only when RUNNING", async () => { 
             await wf.doApprove(0, 1, {from: accounts[1]})
         });
 
         //From S15 does not exist
-        await HlpFail.testFail("wf.doApprove", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doApprove", "Workflow: Only when RUNNING", async () => { 
             await wf.doApprove(0, 15, {from: accounts[1]})
         });
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doReview", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doReview", "Workflow: USN mismatch", async () => { 
             await wf.doReview(1, [1],[1],[1], {from: accounts[1]})
         });
 
         //From S0 only a doInit is allowed
-        await HlpFail.testFail("wf.doReview", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doReview", "Workflow: Only when RUNNING", async () => { 
             await wf.doReview(0, [1],[1],[1], {from: accounts[1]})
         });
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doSignoff", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doSignoff", "Workflow: USN mismatch", async () => { 
             await wf.doSignoff(1, 1, {from: accounts[1]})
         });
 
         //From S0 only a doInit is allowed
-        await HlpFail.testFail("wf.doSignoff", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doSignoff", "Workflow: Only when RUNNING", async () => { 
             await wf.doSignoff(0, 1, {from: accounts[1]})
         });
 
         //From S15 does not exist
-        await HlpFail.testFail("wf.doSignoff", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doSignoff", "Workflow: Only when RUNNING", async () => { 
             await wf.doSignoff(0, 15, {from: accounts[1]})
         });
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doAbort", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: USN mismatch", async () => { 
             await wf.doAbort(1, 1, {from: accounts[1]})
         });
 
         //From S0 only a doInit is allowed
-        await HlpFail.testFail("wf.doAbort", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: Only when RUNNING", async () => { 
             await wf.doAbort(0, 1, {from: accounts[1]})
         });
 
         //From S15 does not exist
-        await HlpFail.testFail("wf.doAbort", "Only when RUNNING", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: Only when RUNNING", async () => { 
             await wf.doAbort(0, 15, {from: accounts[1]})
         });
     });

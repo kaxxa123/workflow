@@ -41,7 +41,7 @@ contract WorkflowManager is IWFRemove, AccessControl {
     /// Entries are encoded as follows:
     /// <free><flags><hiLimit><loLimit>
     function addWF(address eng, uint256[] calldata docs) external {
-        require(hasRole(WF_ADMIN_ROLE, msg.sender), "Unauthorized");
+        require(hasRole(WF_ADMIN_ROLE, msg.sender), "WFManager: Unauthorized");
 
         Workflow oneWF = new Workflow(
             eng, 
@@ -70,12 +70,12 @@ contract WorkflowManager is IWFRemove, AccessControl {
         //Make sure we are deleting a WF that is actually in the list
         //Note this will also block deleting the root node (id == 0)
         ListElement storage elem = openWFs[id];
-        require(elem.addr != address(0x0), "Uninitialized WF cannot be deleted");
+        require(elem.addr != address(0x0), "WFManager: Uninitialized WF cannot be deleted");
 
         //Confirm that WF is ready for delisting
         Workflow oneWF = Workflow(elem.addr);
         WFMode mode = oneWF.mode();
-        require((mode == WFMode.COMPLETE) || (mode == WFMode.ABORTED), "WF still not concluded");
+        require((mode == WFMode.COMPLETE) || (mode == WFMode.ABORTED), "WFManager: WF still not concluded");
 
         //Add log for deleted WF
         emit EventWFDeleted(id, elem.addr);
@@ -120,7 +120,7 @@ contract WorkflowManager is IWFRemove, AccessControl {
 
         //Validate reading position
         //This can happen if a WF is deleted while traversing the list
-        require(openWFs[itemPos].addr != address(0x0), "Invalid reading position.");
+        require(openWFs[itemPos].addr != address(0x0), "WFManager: Invalid reading position.");
 
         //Determine number of elements to be returned
         //We count until:

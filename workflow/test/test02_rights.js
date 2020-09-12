@@ -24,40 +24,40 @@ contract('Testing Rights', function (accounts) {
         assert(isFinal, "Should be Final!")
 
         //Cannot add states once final
-        await HlpFail.testFail("wf.addState", "Workflow is final", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Workflow is final", async () => { 
             await wf.addState([1]);
         });
 
         //Cannot add right Unauthorized
-        await HlpFail.testFail("wf.addRight", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Unauthorized", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.INIT, {from: accounts[1]});
         });
 
         //Cannot add right to non-existing state
-        await HlpFail.testFail("wf.addRight", "Non-existing state", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Non-existing state", async () => { 
             await wf.addRight(6, 0, accounts[1], WFRights.APPROVE);
         });
 
         //Cannot add right to non-existing edge
-        await HlpFail.testFail("wf.addRight", "Non-existing edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Non-existing edge", async () => { 
             await wf.addRight(0, 1, accounts[1], WFRights.APPROVE);
         });
-        await HlpFail.testFail("wf.addRight", "Non-existing edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Non-existing edge", async () => { 
             await wf.addRight(4, 0, accounts[1], WFRights.APPROVE);
         });
 
         //Right not allowed for this edge S0->
         //Only INIT should be allowed
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.APPROVE);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.REVIEW);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.SIGNOFF);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.ABORT);
         });
         await HlpFail.testFail("wf.addRight", "", async () => { 
@@ -66,16 +66,16 @@ contract('Testing Rights', function (accounts) {
 
         //Right not allowed for this edge S1->S2
         //Only APPROVE should be allowed
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(1, 0, accounts[1], WFRights.INIT);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(1, 0, accounts[1], WFRights.REVIEW);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(1, 0, accounts[1], WFRights.SIGNOFF);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(1, 0, accounts[1], WFRights.ABORT);
         });
         await HlpFail.testFail("wf.addRight", "", async () => { 
@@ -84,16 +84,16 @@ contract('Testing Rights', function (accounts) {
 
         //Right not allowed for this edge S3->S3
         //Only REVIEW should be allowed
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 2, accounts[1], WFRights.INIT);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 2, accounts[1], WFRights.APPROVE);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 2, accounts[1], WFRights.SIGNOFF);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 2, accounts[1], WFRights.ABORT);
         });
         await HlpFail.testFail("wf.addRight", "", async () => { 
@@ -102,13 +102,13 @@ contract('Testing Rights', function (accounts) {
 
         //Right not allowed for this edge S3->S4
         //Only ABORT/SIGNOFF should be allowed
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 3, accounts[1], WFRights.INIT);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 3, accounts[1], WFRights.APPROVE);
         });
-        await HlpFail.testFail("wf.addRight", "Right not allowed for this edge", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Right not allowed for this edge", async () => { 
             await wf.addRight(3, 3, accounts[1], WFRights.REVIEW);
         });
         await HlpFail.testFail("wf.addRight", "", async () => { 
@@ -131,30 +131,30 @@ contract('Testing Rights', function (accounts) {
         await wf.addRight(3, 4, accounts[1], WFRights.ABORT);      //S3 -> S5
 
         //Rights on an edge must be the same
-        await HlpFail.testFail("wf.addRight", "Inconsistent rights", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Inconsistent rights", async () => { 
             await wf.addRight(3, 4, accounts[2], WFRights.SIGNOFF);    //S3 -> S5
         });
 
         //Cannot remove right Unauthorized
-        await HlpFail.testFail("wf.removeRight", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: Unauthorized", async () => { 
             await wf.removeRight(0, 0, accounts[1], WFRights.INIT, {from: accounts[1]});
         });
 
         //Cannot remove right from non-existing state
-        await HlpFail.testFail("wf.removeRight", "Non-existing state", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: Non-existing state", async () => { 
             await wf.removeRight(6, 0, accounts[1], WFRights.APPROVE);
         });
 
         //Cannot remove right from non-existing edge
-        await HlpFail.testFail("wf.removeRight", "Non-existing edge", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: Non-existing edge", async () => { 
             await wf.removeRight(0, 1, accounts[1], WFRights.APPROVE);
         });
-        await HlpFail.testFail("wf.removeRight", "Non-existing edge", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: Non-existing edge", async () => { 
             await wf.removeRight(4, 0, accounts[1], WFRights.APPROVE);
         });
 
         //Cannot remove non-existing right
-        await HlpFail.testFail("wf.removeRight", "User/Right not found", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: User/Right not found", async () => { 
             await wf.removeRight(3, 1, accounts[3], WFRights.APPROVE);
         });
     });

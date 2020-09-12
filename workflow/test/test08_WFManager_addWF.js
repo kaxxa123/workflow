@@ -27,11 +27,11 @@ contract('Testing WorkflowManager addWF', function (accounts) {
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
 
-        await HlpFail.testFail("mgr.addWF", "Unauthorized", async () => { 
+        await HlpFail.testFail("mgr.addWF", "WFManager: Unauthorized", async () => { 
             await mgr.addWF(engine.address, docSet, {from: accounts[0]});
         });
 
-        await HlpFail.testFail("mgr.addWF", "Unauthorized", async () => { 
+        await HlpFail.testFail("mgr.addWF", "WFManager: Unauthorized", async () => { 
             await mgr.addWF(engine.address, docSet, {from: accounts[1]});
         });
     });
@@ -52,11 +52,11 @@ contract('Testing WorkflowManager addWF', function (accounts) {
         let engine = await WorkflowBuilder.deployed();
         let mgr = await WorkflowManager.deployed();
 
-        await HlpFail.testFail("mgr.addWF", "Invalid State Engine address", async () => { 
+        await HlpFail.testFail("mgr.addWF", "Workflow: Invalid State Engine address", async () => { 
             await mgr.addWF("0x0000000000000000000000000000000000000000", docSet, {from: accounts[5]});
         });
 
-        await HlpFail.testFail("mgr.addWF", "Empty Doc Set", async () => { 
+        await HlpFail.testFail("mgr.addWF", "Workflow: Empty Doc Set", async () => { 
             await mgr.addWF(engine.address, [], {from: accounts[5]});
         });
     });

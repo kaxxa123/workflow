@@ -75,32 +75,32 @@ contract('Testing Workflow Abort', function (accounts) {
         let wf = await Workflow.at(wfAddr);
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doAbort", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: USN mismatch", async () => { 
             await wf.doAbort(6, 4) 
         });
 
         //Incorrect USN
-        await HlpFail.testFail("wf.doAbort", "USN mismatch", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: USN mismatch", async () => { 
             await wf.doAbort(8, 4) 
         });
 
         //Sender has no Right to perform this action
-        await HlpFail.testFail("wf.doAbort", "Unauthorized state crossing", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: Unauthorized state crossing", async () => { 
             await wf.doAbort(7, 4) 
         });
 
         //S3 -> S2 is Approve not a Abort edge
-        await HlpFail.testFail("wf.doAbort", "Unauthorized state crossing", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: Unauthorized state crossing", async () => { 
             await wf.doAbort(7, 2, {from: accounts[1]}) 
         });
 
         //S3 -> S4 is Sign-Off not a Abort edge
-        await HlpFail.testFail("wf.doAbort", "Unauthorized state crossing", async () => { 
+        await HlpFail.testFail("wf.doAbort", "Workflow: Unauthorized state crossing", async () => { 
             await wf.doAbort(7, 4, {from: accounts[1]}) 
         });
 
         //S15 does not exist
-        await HlpFail.testFail("wf.doAbort", "Non-existing state", async () => { 
+        await HlpFail.testFail("wf.doAbort", "WFBuilder: Non-existing state", async () => { 
             await wf.doAbort(7, 15, {from: accounts[1]}) 
         });
     });

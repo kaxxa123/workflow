@@ -66,9 +66,9 @@ contract Workflow {
     ) 
         public 
     {
-        require(eng != address(0x0), "Invalid State Engine address");
-        require(addrWFRmv != address(0x0), "Invalid WorkflowManager address");
-        require(docs.length > 0, "Empty Doc Set");
+        require(eng != address(0x0), "Workflow: Invalid State Engine address");
+        require(addrWFRmv != address(0x0), "Workflow: Invalid WorkflowManager address");
+        require(docs.length > 0, "Workflow: Empty Doc Set");
 
         state = 0;
         mode = WFMode.UNINIT;
@@ -84,28 +84,28 @@ contract Workflow {
     /// @param ids a list of document ids to initialize the WF with
     /// @param content a list of document hashes to initialize the WF with
     function doInit(uint256 usn, uint32 nextState, uint256[] calldata ids, uint256[] calldata content) external {
-        require(usn == history.length,"USN mismatch");
-        require(mode == WFMode.UNINIT,"Only when UNINIT");
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.INIT), "Unauthorized state crossing");
+        require(usn == history.length,"Workflow: USN mismatch");
+        require(mode == WFMode.UNINIT,"Workflow: Only when UNINIT");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.INIT), "Workflow: Unauthorized state crossing");
 
         //ids and content include the first doc version the workflow will work on
         //We need to:
         //  Validate ids to satisfy our DocProps limits
         //  Save docs to latest
         uint tot = ids.length;
-        require(tot == content.length,"ids/content array length mismatch");
+        require(tot == content.length,"Workflow: ids/content array length mismatch");
 
         for (uint cnt = 0; cnt < tot; ++cnt) {
             uint32 docType = uint32(ids[cnt]);
-            require(docType < totalDocTypes, "Invalid doc type");
-            require(content[cnt] != 0, "Invalid doc hash");
+            require(docType < totalDocTypes, "Workflow: Invalid doc type");
+            require(content[cnt] != 0, "Workflow: Invalid doc hash");
 
             DocProps storage props = docSet[docType];
 
             //Validate: We didn't exceed the allowed doc count for this type
             //Validate: We didn't get duplicate ids
-            require(props.hiLimit >= props.count+1, "Doc type count exceeded limit");
-            require(latest[ids[cnt]] == 0, "Initializing same ID x times");
+            require(props.hiLimit >= props.count+1, "Workflow: Doc type count exceeded limit");
+            require(latest[ids[cnt]] == 0, "Workflow: Initializing same ID x times");
 
             latest[ids[cnt]] = content[cnt];
             props.count += 1;
@@ -129,9 +129,9 @@ contract Workflow {
     /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
     function doApprove(uint256 usn, uint32 nextState) external {
-        require(usn == history.length,"USN mismatch");
-        require(mode == WFMode.RUNNING,"Only when RUNNING");
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.APPROVE), "Unauthorized state crossing");
+        require(usn == history.length,"Workflow: USN mismatch");
+        require(mode == WFMode.RUNNING,"Workflow: Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.APPROVE), "Workflow: Unauthorized state crossing");
         
         uint256[] memory empty;
         history.push(HistoryInfo({
@@ -154,14 +154,14 @@ contract Workflow {
                        uint256[] calldata idsAdd, 
                        uint256[] calldata contentAdd) external { 
 
-        require(usn == history.length,"USN mismatch");
-        require(mode == WFMode.RUNNING,"Only when RUNNING");
-        require(engine.hasRight(state, state, msg.sender, WFRights.REVIEW), "Unauthorized state crossing");
+        require(usn == history.length,"Workflow: USN mismatch");
+        require(mode == WFMode.RUNNING,"Workflow: Only when RUNNING");
+        require(engine.hasRight(state, state, msg.sender, WFRights.REVIEW), "Workflow: Unauthorized state crossing");
 
         uint totRmv = idsRmv.length;
         uint totAdd = idsAdd.length;
-        require((totAdd != 0) || (totRmv != 0),"No changes submitted");
-        require(totAdd == contentAdd.length,"ids/content array length mismatch");
+        require((totAdd != 0) || (totRmv != 0),"Workflow: No changes submitted");
+        require(totAdd == contentAdd.length,"Workflow: ids/content array length mismatch");
 
         //Remove documents
         for (uint cnt = 0; cnt < totRmv; ++cnt) {
@@ -169,7 +169,7 @@ contract Workflow {
             //  1. A doc with specified id exists
             //  2. The doctype id component is valid
             //  3. props.count must be > 0 (unless we have a bug elsewhere)
-            require(latest[idsRmv[cnt]] != 0,"Doc not found");
+            require(latest[idsRmv[cnt]] != 0,"Workflow: Doc not found");
             delete latest[idsRmv[cnt]];
 
             uint32 docType = uint32(idsRmv[cnt]);
@@ -181,15 +181,15 @@ contract Workflow {
         for (uint cnt = 0; cnt < totAdd; ++cnt) {
             //Get the properties for this doc type
             uint32 docType = uint32(idsAdd[cnt]);
-            require(docType < totalDocTypes, "Invalid doc type");
-            require(contentAdd[cnt] != 0, "Invalid doc hash");
+            require(docType < totalDocTypes, "Workflow: Invalid doc type");
+            require(contentAdd[cnt] != 0, "Workflow: Invalid doc hash");
 
             DocProps storage props = docSet[docType];
 
             //New Doc
             if (latest[idsAdd[cnt]] == 0) {
                 //Validate that we didn't exceed the allowed doc count for this type
-                require(props.hiLimit >= props.count+1, "Doc type count exceeded limit");
+                require(props.hiLimit >= props.count+1, "Workflow: Doc type count exceeded limit");
                 props.count += 1;
             }
 
@@ -211,9 +211,9 @@ contract Workflow {
     /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
     function doSignoff(uint256 usn, uint32 nextState) external {
-        require(usn == history.length,"USN mismatch");
-        require(mode == WFMode.RUNNING,"Only when RUNNING");
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.SIGNOFF), "Unauthorized state crossing");
+        require(usn == history.length,"Workflow: USN mismatch");
+        require(mode == WFMode.RUNNING,"Workflow: Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.SIGNOFF), "Workflow: Unauthorized state crossing");
 
         uint256[] memory empty;
         history.push(HistoryInfo({
@@ -233,9 +233,9 @@ contract Workflow {
     /// @param usn identifies the expected sequence for this WF operation. Should match totalHistory()
     /// @param nextState new state id
     function doAbort(uint256 usn, uint32 nextState) external {
-        require(usn == history.length,"USN mismatch");
-        require(mode == WFMode.RUNNING,"Only when RUNNING");
-        require(engine.hasRight(state, nextState, msg.sender, WFRights.ABORT), "Unauthorized state crossing");
+        require(usn == history.length,"Workflow: USN mismatch");
+        require(mode == WFMode.RUNNING,"Workflow: Only when RUNNING");
+        require(engine.hasRight(state, nextState, msg.sender, WFRights.ABORT), "Workflow: Unauthorized state crossing");
 
         uint256[] memory empty;
         history.push(HistoryInfo({
@@ -255,7 +255,7 @@ contract Workflow {
     /// @param docType document type id
     /// @return flags loLimit hiLimit count
     function getDocProps(uint32 docType) external view  returns(uint32 flags, int32 loLimit, int32 hiLimit, int32 count) {
-        require(docType < totalDocTypes, "Invalid Doc Type");
+        require(docType < totalDocTypes, "Workflow: Invalid Doc Type");
 
         DocProps storage docProps = docSet[docType];
         return (docProps.flags, docProps.loLimit, docProps.hiLimit, docProps.count);
@@ -271,7 +271,7 @@ contract Workflow {
                                                             uint256[] memory idsRmv, 
                                                             uint256[] memory idsAdd, 
                                                             uint256[] memory contentAdd) {
-        require(idx < history.length, "Invalid Doc Type");
+        require(idx < history.length, "Workflow: Invalid Doc Type");
 
         HistoryInfo storage info = history[idx];
 
@@ -318,7 +318,7 @@ contract Workflow {
             // 2. Count is Zero
             DocProps storage props = docSet[cnt];
             if (props.count < props.loLimit) {
-                require((props.flags&FLAG_REQUIRED == 0) && (props.count == 0),"Required files missing");
+                require((props.flags&FLAG_REQUIRED == 0) && (props.count == 0),"Workflow: Required files missing");
             }
         }
     }

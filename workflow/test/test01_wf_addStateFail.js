@@ -31,15 +31,15 @@ contract('Testing Adding States Failures', function (accounts) {
         let wf = await WorkflowBuilder.deployed();
 
         //Cannot add state if not authorized
-        await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Unauthorized", async () => { 
             await wf.addState([1], {from: accounts[0]});
         });
 
-        await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Unauthorized", async () => { 
             await wf.addState([1], {from: accounts[1]});
         });
 
-        await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Unauthorized", async () => { 
             await wf.addState([1], {from: accounts[9]});
         });
     });
@@ -52,7 +52,7 @@ contract('Testing Adding States Failures', function (accounts) {
         await wf.addState([1], {from: accounts[1]});
 
         await wf.revokeRole(WF_SCHEMA_ADMIN_ROLE, accounts[1], {from: accounts[9]});
-        await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Unauthorized", async () => { 
             await wf.addState([2], {from: accounts[1]});
         });
     });
@@ -65,7 +65,7 @@ contract('Testing Adding States Failures', function (accounts) {
         await wf.addState([2], {from: accounts[5]});
 
         await wf.renounceRole(WF_SCHEMA_ADMIN_ROLE, accounts[5], {from: accounts[5]});
-        await HlpFail.testFail("wf.addState", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.addState", "WFBuilder: Unauthorized", async () => { 
             await wf.addState([3], {from: accounts[5]});
         });
     });
@@ -83,13 +83,13 @@ contract('Testing Adding States Failures', function (accounts) {
         await wf.addState([1,2,3,4], {from: accounts[5]});
 
         //Cannot finalize without Schema Admin Right
-        await HlpFail.testFail("wf.doFinalize", "Unauthorized", async () => { 
+        await HlpFail.testFail("wf.doFinalize", "WFBuilder: Unauthorized", async () => { 
             await wf.doFinalize();
         });
 
         //Cannot finalize incomplete state engine.
         //Cannot finalize without Schema Admin Right
-        await HlpFail.testFail("wf.doFinalize", "Edge points to non-existing State", async () => { 
+        await HlpFail.testFail("wf.doFinalize", "WFBuilder: Edge points to non-existing State", async () => { 
             await wf.doFinalize({from: accounts[5]});
         });
 
@@ -98,17 +98,17 @@ contract('Testing Adding States Failures', function (accounts) {
 
         //Cannot finalize incomplete state engine.
         //Cannot finalize without Schema Admin Right
-        await HlpFail.testFail("wf.doFinalize", "Edge cannot point to State Zero", async () => { 
+        await HlpFail.testFail("wf.doFinalize", "WFBuilder: Edge cannot point to State Zero", async () => { 
             await wf.doFinalize({from: accounts[5]});
         });
 
         //Cannot add right when not final
-        await HlpFail.testFail("wf.addRight", "Workflow is not final", async () => { 
+        await HlpFail.testFail("wf.addRight", "WFBuilder: Workflow is not final", async () => { 
             await wf.addRight(0, 0, accounts[1], WFRights.INIT, {from: accounts[5]});
         });
 
         //Cannot remove right when not final
-        await HlpFail.testFail("wf.removeRight", "Workflow is not final", async () => { 
+        await HlpFail.testFail("wf.removeRight", "WFBuilder: Workflow is not final", async () => { 
             await wf.removeRight(0, 0, accounts[1], WFRights.INIT, {from: accounts[5]});
         });
     });

@@ -1,15 +1,11 @@
 const WorkflowBuilder = artifacts.require("WorkflowBuilder");
 const WorkflowManager = artifacts.require("WorkflowManager");
 const Workflow = artifacts.require("Workflow");
-const BigNumber = require("bignumber.js");
 const truffleAssert = require('truffle-assertions');
-const truffleEvent  = require('truffle-events');
-const HlpFail = require('./helpers/testFailure');
 const wfhlp = require('./helpers/wfhelp');
 
 const WFRights = require('./helpers/wfhelp').WFRights;
 const WFFlags = wfhlp.WFFlags;
-const WFMode = require('./helpers/wfhelp').WFMode;
 const makeDocSet = wfhlp.makeDocSet;
 const makeDocID = require('./helpers/wfhelp').makeDocID;
 

@@ -118,17 +118,17 @@ contract('Testing WorkflowManager removeWF', function (accounts) {
         let mgr = await WorkflowManager.deployed();
         
         //WF 0 can never be deleted
-        await HlpFail.testFail("removeWF", "Uninitialized WF cannot be deleted", async () => { 
+        await HlpFail.testFail("removeWF", "WFManager: Uninitialized WF cannot be deleted", async () => { 
             await mgr.removeWF(0); 
         });
 
         //WF 1 was already deleted
-        await HlpFail.testFail("removeWF", "Uninitialized WF cannot be deleted", async () => { 
+        await HlpFail.testFail("removeWF", "WFManager: Uninitialized WF cannot be deleted", async () => { 
             await mgr.removeWF(1); 
         });
 
         //WF 2 cannot be deleted since it's WF is still not concluded
-        await HlpFail.testFail("removeWF", "WF still not concluded", async () => { 
+        await HlpFail.testFail("removeWF", "WFManager: WF still not concluded", async () => { 
             await mgr.removeWF(2); 
         });
     });
