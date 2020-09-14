@@ -1,0 +1,5 @@
+//To user this file rename it to config.json
+{
+    //Set your infura api key here
+    "infuraKey": ""
+}
