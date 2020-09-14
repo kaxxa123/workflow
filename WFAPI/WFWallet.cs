@@ -34,11 +34,7 @@ namespace WFApi
         public static WFWallet CreateWallet(string sPassword, out string mnemo, string url = "http://localhost:8545/") 
         {
             mnemo = null;
-
-            if (String.IsNullOrWhiteSpace(sPassword))
-                throw new ArgumentException("Password cannot be empty");
-
-            sPassword = sPassword.Trim();
+            sPassword = sPassword?.Trim();
 
             var newMnemo = new NBitcoin.Mnemonic(NBitcoin.Wordlist.English, NBitcoin.WordCount.Twelve);
             Wallet wallet = new Wallet(newMnemo.ToString(), sPassword);
@@ -65,11 +61,8 @@ namespace WFApi
             if (String.IsNullOrWhiteSpace(sMnemo))
                 throw new ArgumentException("Mnemonic cannot be empty");
 
-            if (String.IsNullOrWhiteSpace(sPassword))
-                throw new ArgumentException("Password cannot be empty");
-
             sMnemo = sMnemo.Trim();
-            sPassword = sPassword.Trim();
+            sPassword = sPassword?.Trim();
 
             Wallet wallet = new Wallet(sMnemo, sPassword);
             Account acc = wallet.GetAccount(0);
@@ -137,7 +130,7 @@ namespace WFApi
         //      amnt - amount to transfer in Wei
         //
         // Return:
-        //      Gas Amount Estimate
+        //      Transaction fee estimate in the requested unit
         public async Task<BigInteger> Estimate(string sAddr, BigInteger amnt, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             decimal ethAmnt = Web3.Convert.FromWei(amnt);

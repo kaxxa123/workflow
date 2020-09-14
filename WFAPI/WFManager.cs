@@ -8,12 +8,14 @@ using Nethereum.Hex.HexTypes;
 
 namespace WFApi
 {
+    //Flags applicable to each document type within the document-set
     public enum WFFlags 
     {
         REQUIRED    = 1,    //Document is required
         PUBLIC      = 2     //Document is to be published
     };
 
+    // Stores a set of properties for the documents that will be traversing the WF
     public struct DocSet
     {
         public uint flags;
@@ -21,18 +23,23 @@ namespace WFApi
         public uint loLimit; 
     };
 
+    // Encapsulates the result of a ReadWFs function call
     [FunctionOutput]
     public class ReadWFOutput : IFunctionOutputDTO
     {
+        // A list of addresses returned by the ReadWFs function call. 
+        // If no addresses are read an empty list is returned.
         [Parameter("address[]", "addrList", 1)]
         public List<string> addrList { get; set; }
 
+        //The id of the next item to be used when reading the list in batches. 
+        //If the read operation hits the list end next is set to zero.
         [Parameter("uint256", "next", 2)]
         public uint next { get; set; }
     }
 
     [Event("EventWFAdded")]
-    public class WFAddedEvent : IEventDTO
+    internal class WFAddedEvent : IEventDTO
     {
         [Parameter("uint256", "id", 1, true)]
         public uint id { get; set; }
@@ -42,7 +49,7 @@ namespace WFApi
     }
 
     [Event("EventWFDeleted")]
-    public class WFDeletedEvent : IEventDTO
+    internal class WFDeletedEvent : IEventDTO
     {
         [Parameter("uint256", "id", 1, true)]
         public uint id { get; set; }
@@ -51,6 +58,7 @@ namespace WFApi
         public string addr { get; set; }
     }
 
+    //Manages the list of open and closed workflows
     public class WFManager
     {
         protected WFWallet m_myWallet;
@@ -62,24 +70,28 @@ namespace WFApi
             m_contract = wallet.W3.Eth.GetContract(WF.MANAGER_ABI, WF.MANAGER_ADDR);
         }
 
+        // Get the total count of open workflows.
         public async Task<uint> GetTotalOpenWFs()
         {
             var func = m_contract.GetFunction("totalWFs");
             return await func.CallAsync<uint>();
         }
 
+        // Get the id of the first open workflow.
         public async Task<uint> GetFirstWF()
         {
             var func = m_contract.GetFunction("firstWF");
             return await func.CallAsync<uint>();
         }
 
+        // Id of next WF to be created, Ids are assigned sequentially.
         public async Task<uint> GetNextWF()
         {
             var func = m_contract.GetFunction("nextWF");
             return await func.CallAsync<uint>();
         }
 
+        // Get the contract Unique Sequence Number.
         public async Task<uint> GetUSN()
         {
             uint one = await GetNextWF();
@@ -88,12 +100,14 @@ namespace WFApi
             return (two << 32) | one;
         }
 
+        // Reads up to toRead WFs starting from the element with id start.
         public async Task<ReadWFOutput> ReadWFs(uint start, uint toRead)
         {
             var func = m_contract.GetFunction("readWF");
             return await func.CallDeserializingToObjectAsync<ReadWFOutput>(start, toRead);
         }
 
+        // Retrieve transaction fee estimate to create a new workflow.
         public async Task<BigInteger> Estimate(DocSet[] docs, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             BigInteger[] docs2 = ConvertDocs(docs);
@@ -104,6 +118,7 @@ namespace WFApi
             return WF.Estimate(gas, typ, gasPrice);
         }
 
+        // Create a new workflow with the specified document set.
         public async Task<Tuple<string,string>> AddWF(DocSet[] docs, BigInteger? gasPrice = null)
         {
             BigInteger[] docs2 = ConvertDocs(docs);
@@ -126,12 +141,14 @@ namespace WFApi
             return new Tuple<string, string>(eventList[0].Event.addr, recpt.TransactionHash);
         }
 
+        // Get the total count of closed workflows.
         public async Task<uint> GetTotalClosedWFs()
         {
             var func = m_contract.GetFunction("totalClosedWFs");
             return await func.CallAsync<uint>();
         }
 
+        // Get the address of the closed workflow at the specified index.
         public async Task<string> GetClosedWF(uint idx)
         {
             var func = m_contract.GetFunction("closedWFs");

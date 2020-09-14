@@ -3,6 +3,7 @@ using Nethereum.Hex.HexTypes;
 
 namespace WFApi
 {
+    //Defines error codes for all errors that may be raised by the Workflow smart contracts.
     public enum WFErr
     {
         WFFail,                 // Generic when nothing else matches
@@ -45,13 +46,15 @@ namespace WFApi
         AccessCantRenounce,     // "AccessControl: can only renounce roles for self"
     }
 
+    //Used whenever retrieving Transaction fee estimates to choose the estimate unit.
     public enum EstTyp
     {
-        GAS,
-        WEI,
-        EUR
+        GAS,    // Estimate Transaction fee in gas
+        WEI,    // Estimate Transaction fee in Wei
+        EUR     // Estimate Transaction fee in Euro
     }
 
+    //Includes various constants, static methods and properties useful with working with the Workflow API.
     public class WF
     {
         public const string BUILDER_ABI =
@@ -137,14 +140,19 @@ namespace WFApi
         public const string BUILDER_ADDR_ROPSTEN = "0x1D30975bA198B0FF8dC95e522472Bd5047BAbA39";
         public const string MANAGER_ADDR_ROPSTEN = "0x522CDa6A8eC47a179D2C27fC68DA836A7C54d699";
 
+        //The Workflow Builder smart contract address currently in used by the WF API
         public static string BUILDER_ADDR { get; set; } = BUILDER_ADDR_ROPSTEN;
+
+        //The Workflow Manager smart contract address currently in used by the WF API
         public static string MANAGER_ADDR { get; set; } = MANAGER_ADDR_ROPSTEN;
 
+        //Get the default Gas Price in use within the WF API 
         public static BigInteger DefaultGasPrice()
         {
             return 20 * BigInteger.Pow(10, 9);
         }
 
+        //Get the Ethereum EUR rate applied when calling Transaction estimation functions
         public static BigInteger EURRate()
         {
             return 320;
@@ -155,6 +163,7 @@ namespace WFApi
             return new HexBigInteger(requested ?? DefaultGasPrice());
         }
 
+        //Helper to convert a transaction estimate in gas to another unit defined by EstTyp
         public static BigInteger Estimate(BigInteger gas, EstTyp typ, BigInteger? gasPrice)
         {
             switch (typ)
@@ -166,6 +175,7 @@ namespace WFApi
             return gas * (gasPrice ?? DefaultGasPrice()) * EURRate();
         }
 
+        //Helper for interpreting errors raised by the WF smart contracts, converting the exception message to a WFErr.
         public static WFErr GetErr(string sMsg)
         {
             if (string.IsNullOrWhiteSpace(sMsg))

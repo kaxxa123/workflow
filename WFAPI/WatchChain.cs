@@ -11,20 +11,33 @@ namespace WFApi
 {
     using RecptDbl = Tuple<string, BigInteger>;
 
+    //Encapsulates a bunch of properties describing a block.
+    //This is passed to the observer instance by CWatchChain::CountBlocks()
     public class CWFBlock
     {
+        //The Block number
         public long BlkNum { get; set;  }
+        //The Block hash
         public string Hash { get; set; }
     }
 
+    //Encapsulates a bunch of properties describing a transaction. 
+    //This is returned by CWatchChain::GetTransaction()
     public class CWFTransaction
-    { 
+    {
+        //Transaction sender address
         public string From { get; set; }
+        //Transaction recipient address
         public string To { get; set; }
+        //Transaction Value sent to recipient in Wei
         public BigInteger Value { get; set; }
+        //Transaction Fee in Gas
         public BigInteger Gas { get; set; }
+        //Transaction Gas Price
         public BigInteger GasPrice { get; set; }
+        //Block Number where this transaction is included
         public BigInteger BlockNumber { get; set; }
+        //Block Hash where this transaction is included
         public string BlockHash { get; set; }
     }
 
@@ -87,8 +100,10 @@ namespace WFApi
         }
     }
 
+    //A number of helpers for retrieving blockchain information
     public class CWatchChain
     {
+        //Get transaction information for the given transaction hash
         public static async Task<CWFTransaction> GetTransaction(WFWallet wallet, string sHash)
         {
             Transaction trn = await wallet.W3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(sHash);
@@ -105,6 +120,7 @@ namespace WFApi
             return trnOut;
         }
 
+        //Get transaction fee in Wei for the given transaction hash
         public static async Task<BigInteger> GetTxFee(WFWallet wallet, string sHash)
         {
             BigInteger? fee = TxFeeHistory.Find(sHash);
@@ -115,6 +131,7 @@ namespace WFApi
             return trn.Gas.Value * trn.GasPrice.Value;
         }
 
+        //Observe the blockchain for mined blocks
         public static async Task<long> CountBlocks(int iBlkTot, IObserver<CWFBlock> obsrv = null, Func<bool> UserExit = null, string url = "ws://127.0.0.1:8545")
         {
             bool subscribed = true;

@@ -6,12 +6,13 @@ using System.Collections.Generic;
 
 namespace WFApi
 {
+    //Identifies Smart Contract running mode
     public enum WFMode
     {
-        UNINIT = 0,    //State Engine Unintialized
-        RUNNING = 1,    //State Engine Running
-        COMPLETE = 2,    //State Engine Ended Success
-        ABORTED = 3     //State Entine Ended Aborted
+        UNINIT = 0,     // State Engine Uninitialized
+        RUNNING = 1,    // State Engine Running
+        COMPLETE = 2,   // State Engine Ended Success
+        ABORTED = 3     // State Engine Ended Aborted
     };
 
     [FunctionOutput]

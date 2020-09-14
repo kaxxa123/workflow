@@ -4,25 +4,29 @@ using System.Threading.Tasks;
 
 namespace WFApi
 {
+    //Type of Smart Contract Access Role 
     public enum RoleTyp
     {
-        RootAdmin,
-        ContractAdmin,
+        RootAdmin,      // Root Administrator Role
+        ContractAdmin,  // Contract Administrator Role
     }
 
+    //Type of Smart Contract Access Operation being performed
     public enum RoleOp
     {
-        Grant,
-        Revoke,
-        Renounce
+        Grant,      // Grant Role
+        Revoke,     // Revoke Role
+        Renounce    // Renounce own Role
     }
 
+    //Management of Access roles for the WF Builder
     public class WFBuilderAccess : WorkflowAccess
     {
         public WFBuilderAccess(WFWallet wallet) : base(wallet, WF.BUILDER_ABI, WF.BUILDER_ADDR, "WF_SCHEMA_ADMIN_ROLE")
         { }
     }
 
+    //Management of Access roles for the WF Manager
     public class WFManagerAccess : WorkflowAccess
     {
         public WFManagerAccess(WFWallet wallet) : base(wallet, WF.MANAGER_ABI, WF.MANAGER_ADDR, "WF_ADMIN_ROLE")
@@ -45,15 +49,23 @@ namespace WFApi
             m_roleName = role;
         }
 
+        // Verify if account has the specified role
         public async Task<bool> HasRole(RoleTyp role, string addr)
         {   return await CheckRole(role, addr); }
+
+        // Grant the specified role to the account with address addr
         public async Task<string> GrantRole(RoleTyp role, string addr, BigInteger? gasPrice = null)
         {   return await UpdateRole(RoleOp.Grant, role, addr, gasPrice); }
+
+        // Revoke the specified role to the account with address addr
         public async Task<string> RevokeRole(RoleTyp role, string addr, BigInteger? gasPrice = null)
         {   return await UpdateRole(RoleOp.Revoke, role, addr, gasPrice); }
-        public async Task<string> RenounceRole(RoleTyp role, string addr, BigInteger? gasPrice = null)
-        {   return await UpdateRole(RoleOp.Renounce, role, addr, gasPrice); }
 
+        // Renounce the specified role
+        public async Task<string> RenounceRole(RoleTyp role, BigInteger? gasPrice = null)
+        {   return await UpdateRole(RoleOp.Renounce, role, m_myWallet.Address, gasPrice); }
+
+        // Retrieve the amount of gas required to perform Grant/Revoke/Renounce operation.
         public async Task<BigInteger> Estimate(RoleOp op, RoleTyp role, string addr, EstTyp typ = EstTyp.GAS, BigInteger? gasPrice = null)
         {
             string sFunc = GetOp(op);
