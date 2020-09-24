@@ -79,11 +79,13 @@ namespace WFTest
                 await DoTransfer(myWallet, MY_ADDR_ADDR2, 1000, 30 * BigInteger.Pow(10, 9));
 
                 await AddWFBuilderRoles(myWallet);
+                await GetWFBuilderRoles(myWallet);
                 await RemoveWFBuilderRights(myWallet);
                 await AddWFBuilderRights(myWallet);
                 await ShowWFBuilder(myWallet);
 
                 await AddWFManagerRoles(myWallet);
+                await GetWFManagerRoles(myWallet);
                 await NewWF(myWallet);
                 await ShowWFManager(myWallet);
                 await RunFirstWF(myWallet);
@@ -225,6 +227,63 @@ namespace WFTest
             Console.WriteLine();
 
             return balanceFrom;
+        }
+
+        static async Task GetWFBuilderRoles(WFWallet myWallet)
+        {
+            WFBuilderAccess wfb = new WFBuilderAccess(myWallet);
+
+            uint tot = await wfb.GetAdminCnt(RoleTyp.RootAdmin);
+            Console.WriteLine("==========");
+            Console.WriteLine("WF Builder");
+            Console.WriteLine("==========");
+            Console.WriteLine($"Total Root Admins: {tot}");
+
+            for (uint cnt = 0; cnt < tot; ++cnt)
+            {
+                string sAddr = await wfb.GetAdmin(RoleTyp.RootAdmin, cnt);
+                Console.WriteLine($"Admin: {sAddr}");
+            }
+            Console.WriteLine();
+
+            tot = await wfb.GetAdminCnt(RoleTyp.ContractAdmin);
+            Console.WriteLine($"Total Contract Admins: {tot}");
+
+            for (uint cnt = 0; cnt < tot; ++cnt)
+            {
+                string sAddr = await wfb.GetAdmin(RoleTyp.ContractAdmin, cnt);
+                Console.WriteLine($"Admin: {sAddr}");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+        }
+        static async Task GetWFManagerRoles(WFWallet myWallet)
+        {
+            WFManagerAccess wfm = new WFManagerAccess(myWallet);
+
+            uint tot = await wfm.GetAdminCnt(RoleTyp.RootAdmin);
+            Console.WriteLine("==========");
+            Console.WriteLine("WF Manager");
+            Console.WriteLine("==========");
+            Console.WriteLine($"Total Root Admins: {tot}");
+
+            for (uint cnt = 0; cnt < tot; ++cnt)
+            {
+                string sAddr = await wfm.GetAdmin(RoleTyp.RootAdmin, cnt);
+                Console.WriteLine($"Admin: {sAddr}");
+            }
+            Console.WriteLine();
+
+            tot = await wfm.GetAdminCnt(RoleTyp.ContractAdmin);
+            Console.WriteLine($"Total Contract Admins: {tot}");
+
+            for (uint cnt = 0; cnt < tot; ++cnt)
+            {
+                string sAddr = await wfm.GetAdmin(RoleTyp.ContractAdmin, cnt);
+                Console.WriteLine($"Admin: {sAddr}");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
         }
 
         static async Task AddWFBuilderRoles(WFWallet myWallet, bool bFlipFlop = false)

@@ -49,9 +49,29 @@ namespace WFApi
             m_roleName = role;
         }
 
+        // Get the number of Admins having the specified role
+        public async Task<uint> GetAdminCnt(RoleTyp role)
+        {
+            byte[] roleId = await GetRole(role);
+            var func = m_contract.GetFunction("getRoleMemberCount");
+            return await func.CallAsync<uint>(roleId);
+        }
+
+        // Get Admin address for given Role and Index
+        public async Task<string> GetAdmin(RoleTyp role, uint uIdx)
+        {
+            byte[] roleId = await GetRole(role);
+            var func = m_contract.GetFunction("getRoleMember");
+            return await func.CallAsync<string>(roleId, uIdx);
+        }
+
         // Verify if account has the specified role
         public async Task<bool> HasRole(RoleTyp role, string addr)
-        {   return await CheckRole(role, addr); }
+        {
+            byte[] roleId = await GetRole(role);
+            var func = m_contract.GetFunction("hasRole");
+            return await func.CallAsync<bool>(roleId, addr);
+        }
 
         // Grant the specified role to the account with address addr
         public async Task<string> GrantRole(RoleTyp role, string addr, BigInteger? gasPrice = null)
@@ -94,13 +114,6 @@ namespace WFApi
 
             TxFeeHistory.Add(recpt.TransactionHash, recpt.GasUsed.Value * weiGP.Value);
             return recpt.TransactionHash;
-        }
-
-        protected async Task<bool>   CheckRole(RoleTyp role, string addr)
-        {
-            byte[] roleId = await GetRole(role);
-            Nethereum.Contracts.Function func = m_contract.GetFunction("hasRole");
-            return await func.CallAsync<bool>(roleId, addr);
         }
 
         protected async Task<byte[]>  GetRole(RoleTyp role)
