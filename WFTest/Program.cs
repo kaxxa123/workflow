@@ -5,6 +5,7 @@ using System.Numerics;
 using System.IO;
 using Newtonsoft.Json;
 using WFApi;
+using System.Runtime.InteropServices;
 
 namespace WFTest
 {
@@ -55,6 +56,33 @@ namespace WFTest
             return true;
         }
 
+        private static void ShowMenu()
+        {
+            Console.WriteLine();
+            Console.WriteLine("******************************");
+            Console.WriteLine("Choose Options:");
+            Console.WriteLine(" A - Run All Tests");
+            Console.WriteLine(" T - Transfer");
+            Console.WriteLine(" N - New Workflow");
+            Console.WriteLine(" R - Run Last Workflow");
+            Console.WriteLine();
+            Console.WriteLine(" 1 - Show WF Builder Roles");
+            Console.WriteLine(" 2 - Show WF Builder Settings");
+            Console.WriteLine(" 3 - WF Builder Admin Role - Add Self");
+            Console.WriteLine(" 4 - WF Builder Admin Role - Remove Self");
+            Console.WriteLine(" 5 - WF Builder Participant - Add Self");
+            Console.WriteLine(" 6 - WF Builder Participant - Remove Self");
+            Console.WriteLine();
+            Console.WriteLine(" 7 - Show WF Manager Roles");
+            Console.WriteLine(" 8 - Show WF Manager Settings");
+            Console.WriteLine(" 9 - WF Manager Admin Role - Add to Self");
+            Console.WriteLine(" 0 - WF Manager Admin Role - Remove Self");
+            Console.WriteLine();
+            Console.WriteLine(" X - Exit");
+            Console.WriteLine("******************************");
+            Console.WriteLine();
+        }
+
         static void Main(string[] args)
         {
             if (!InitConfig())
@@ -69,32 +97,102 @@ namespace WFTest
         static async Task MainTest(bool bNew)
         {
             WFWallet myWallet;
+            bool bExit = false;
 
             try
             {
                 myWallet = await GetWallet(bNew);
                 if (bNew) return;
-                
-                //Transfer 1000 Wei, specifying custom Gas Price of 30 GWei
-                await DoTransfer(myWallet, MY_ADDR_ADDR2, 1000, 30 * BigInteger.Pow(10, 9));
 
-                await AddWFBuilderRoles(myWallet);
-                await GetWFBuilderRoles(myWallet);
-                await RemoveWFBuilderRights(myWallet);
-                await AddWFBuilderRights(myWallet);
-                await ShowWFBuilder(myWallet);
+                ShowMenu();
 
-                await AddWFManagerRoles(myWallet);
-                await GetWFManagerRoles(myWallet);
-                await NewWF(myWallet);
-                await ShowWFManager(myWallet);
-                await RunFirstWF(myWallet);
+                while (!bExit)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+
+                    if ((key.Modifiers == 0) || (key.Modifiers == ConsoleModifiers.Shift))
+                    {
+                        switch (key.Key)
+                        {
+                            case ConsoleKey.A:
+                                //Transfer 1000 Wei, specifying custom Gas Price of 30 GWei
+                                await DoTransfer(myWallet, MY_ADDR_ADDR2, 1000, 30 * BigInteger.Pow(10, 9));
+
+                                await AddWFBuilderRoles(myWallet);
+                                await GetWFBuilderRoles(myWallet);
+                                await RemoveWFBuilderRights(myWallet);
+                                await AddWFBuilderRights(myWallet);
+                                await ShowWFBuilder(myWallet);
+
+                                await AddWFManagerRoles(myWallet);
+                                await GetWFManagerRoles(myWallet);
+                                await NewWF(myWallet);
+                                await ShowWFManager(myWallet);
+                                await RunLastWF(myWallet);
+                                break;
+                            case ConsoleKey.T:
+                                await DoTransfer(myWallet, MY_ADDR_ADDR2, 1000);
+                                break;
+                            case ConsoleKey.N:
+                                await NewWF(myWallet);
+                                break;
+                            case ConsoleKey.R:
+                                await RunLastWF(myWallet);
+                                break;
+
+                            case ConsoleKey.D1:
+                                await GetWFBuilderRoles(myWallet);
+                                break;
+                            case ConsoleKey.D2:
+                                await ShowWFBuilder(myWallet);
+                                break;
+                            case ConsoleKey.D3:
+                                await AddWFBuilderRoles(myWallet);
+                                break;
+                            case ConsoleKey.D4:
+                                await RemoveWFBuilderRoles(myWallet);
+                                break;
+                            case ConsoleKey.D5:
+                                await AddWFBuilderRights(myWallet);
+                                break;
+                            case ConsoleKey.D6:
+                                await RemoveWFBuilderRights(myWallet);
+                                break;
+
+                            case ConsoleKey.D7:
+                                await GetWFManagerRoles(myWallet);
+                                break;
+                            case ConsoleKey.D8:
+                                await ShowWFManager(myWallet);
+                                break;
+                            case ConsoleKey.D9:
+                                await AddWFManagerRoles(myWallet);
+                                break;
+                            case ConsoleKey.D0:
+                                await RemoveWFManagerRoles(myWallet);
+                                break;
+
+                            case ConsoleKey.X:
+                                Console.WriteLine("Exiting...");
+                                bExit = true;
+                                break;
+
+                            default:
+                                Console.WriteLine("Invalid Option.");
+                                ShowMenu();
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid Option.");
+                        ShowMenu();
+                    }
+                }
 
                 Console.WriteLine();
                 Console.WriteLine("* * * * * * * * * * * * * * * ");
-                Console.WriteLine("   Ready Hit Enter to Exit");
                 Console.WriteLine();
-                Console.ReadLine();
             }
             catch (Exception Ex)
             {
@@ -166,24 +264,24 @@ namespace WFTest
         static async Task<BigInteger> TraceTransaction(WFWallet myWallet, string hash)
         {
             CWFTransaction trn = await CWatchChain.GetTransaction(myWallet, hash);
-            BigInteger feeTrn = trn.Gas * trn.GasPrice;
             Console.WriteLine();
             Console.WriteLine($"Block {trn.BlockNumber}. {trn.BlockHash}");
             Console.WriteLine($"[{trn.From}] -> [{trn.To}]");
-            Console.WriteLine($"Value/GasUsed/GasPrice/Fee = {trn.Value}/{trn.Gas}/{trn.GasPrice}/{feeTrn}");
+            Console.WriteLine($"Value/GasLimit/GasPrice = {trn.Value}/{trn.Gas}/{trn.GasPrice}");
 
             BigInteger feeRecpt = await CWatchChain.GetTxFee(myWallet, hash);
             Console.WriteLine($"Trn Receipt Fee: {feeRecpt}");
             Console.WriteLine();
-
-            if (feeTrn != feeRecpt)
-                throw new Exception("Unexpected: Trn Fee from Tansaction and Receipt DO NOT MATCH!");
 
             return feeRecpt;
         }
 
         static async Task<BigInteger> DoTransfer(WFWallet myWallet, string receiverAddr, BigInteger amnt, BigInteger? gasPrice = null)
         {
+            Console.WriteLine();
+            Console.WriteLine("==========================================");
+            Console.WriteLine("Testing Transfer");
+
             //Show funds BEFORE
             string sAddr = myWallet.Address;
             BigInteger balanceFrom = await myWallet.CheckFunds(null);
@@ -192,6 +290,7 @@ namespace WFTest
             Console.WriteLine($"Balance {receiverAddr}: {balanceTo}");
 
             //Estimate Fees and Final Balance
+            //Note this is just an estimate
             BigInteger gasEstimate = await myWallet.Estimate(receiverAddr, amnt);
             BigInteger feeEstimate = gasEstimate * ((gasPrice != null) ? (BigInteger)gasPrice : WF.DefaultGasPrice());
             BigInteger balanceEstimate = balanceFrom - feeEstimate - amnt;
@@ -209,6 +308,9 @@ namespace WFTest
             BigInteger trnFees = await TraceTransaction(myWallet, hash);
             Console.WriteLine();
 
+            //Workout expected Balance using the Actual fee info
+            BigInteger balanceExpected = balanceFrom - trnFees - amnt;
+
             //Show funds AFTER
             balanceFrom = await myWallet.CheckFunds(null);
             balanceTo = await myWallet.CheckFunds(receiverAddr);
@@ -216,11 +318,8 @@ namespace WFTest
             Console.WriteLine($"Balance {receiverAddr}: {balanceTo}");
             Console.WriteLine();
 
-            if (feeEstimate != trnFees)
-                throw new Exception("Actual/Estimate Fees mismatch");
-
-            if (balanceFrom != balanceEstimate)
-                throw new Exception("Actual/Estimate Balance mismatch");
+            if (balanceFrom != balanceExpected)
+                throw new Exception("Actual/Expected Balance mismatch");
 
             Console.WriteLine("==========================================");
             Console.WriteLine("DoTransfer Success!");
@@ -234,9 +333,9 @@ namespace WFTest
             WFBuilderAccess wfb = new WFBuilderAccess(myWallet);
 
             uint tot = await wfb.GetAdminCnt(RoleTyp.RootAdmin);
-            Console.WriteLine("==========");
-            Console.WriteLine("WF Builder");
-            Console.WriteLine("==========");
+            Console.WriteLine("========================");
+            Console.WriteLine("Reading WF Builder Roles");
+            Console.WriteLine("========================");
             Console.WriteLine($"Total Root Admins: {tot}");
 
             for (uint cnt = 0; cnt < tot; ++cnt)
@@ -262,9 +361,9 @@ namespace WFTest
             WFManagerAccess wfm = new WFManagerAccess(myWallet);
 
             uint tot = await wfm.GetAdminCnt(RoleTyp.RootAdmin);
-            Console.WriteLine("==========");
-            Console.WriteLine("WF Manager");
-            Console.WriteLine("==========");
+            Console.WriteLine("========================");
+            Console.WriteLine("Reading WF Manager Roles");
+            Console.WriteLine("========================");
             Console.WriteLine($"Total Root Admins: {tot}");
 
             for (uint cnt = 0; cnt < tot; ++cnt)
@@ -286,13 +385,13 @@ namespace WFTest
             Console.WriteLine();
         }
 
-        static async Task AddWFBuilderRoles(WFWallet myWallet, bool bFlipFlop = false)
+        static async Task AddWFBuilderRoles(WFWallet myWallet)
         {
             WFBuilderAccess wfb = new WFBuilderAccess(myWallet);
 
-            Console.WriteLine("==========");
-            Console.WriteLine("WF Builder");
-            Console.WriteLine("==========");
+            Console.WriteLine("=======================");
+            Console.WriteLine("Adding WF Builder Roles");
+            Console.WriteLine("=======================");
             Console.WriteLine("Granting Contract Admin Role to Self...");
 
             //30 GWei
@@ -312,36 +411,17 @@ namespace WFTest
             if (!bRet)
                 throw new Exception("Expected Role NOT Granted");
 
-            if (bFlipFlop)
-            {
-                Console.WriteLine("Revoking Contract Admin Role to Self...");
-                hash = await wfb.RevokeRole(RoleTyp.ContractAdmin, myWallet.Address);
-                Console.WriteLine($"Revoked OK: {hash}");
-                await TraceTransaction(myWallet, hash);
-                await ConfirmTrn(myWallet, hash);
-
-                bRet = await wfb.HasRole(RoleTyp.RootAdmin, myWallet.Address);
-                Console.WriteLine($"Root Admin Role Granted: {bRet}");
-
-                bRet = await wfb.HasRole(RoleTyp.ContractAdmin, myWallet.Address);
-                Console.WriteLine($"Contract Admin Role Granted: {bRet}");
-                Console.WriteLine();
-
-                if (bRet)
-                    throw new Exception("Unexpected Role Granted");
-            }
-
             Console.WriteLine("==========================================");
             Console.WriteLine("AddWFBuilderRoles Success!");
             Console.WriteLine();
         }
-        static async Task AddWFManagerRoles(WFWallet myWallet, bool bFlipFlop = false)
+        static async Task AddWFManagerRoles(WFWallet myWallet)
         {
             WFManagerAccess wfm = new WFManagerAccess(myWallet);
 
-            Console.WriteLine("==========");
-            Console.WriteLine("WF Manager");
-            Console.WriteLine("==========");
+            Console.WriteLine("=======================");
+            Console.WriteLine("Adding WF Manager Roles");
+            Console.WriteLine("=======================");
             Console.WriteLine("Granting Contract Admin Role to Self...");
             string hash = await wfm.GrantRole(RoleTyp.ContractAdmin, myWallet.Address);
             await ConfirmTrn(myWallet, hash);
@@ -356,34 +436,70 @@ namespace WFTest
             if (!bRet)
                 throw new Exception("Expected Role NOT Granted");
 
-            if (bFlipFlop)
-            {
-                Console.WriteLine("Revoking Contract Admin Role to Self...");
-
-                hash = await wfm.RevokeRole(RoleTyp.ContractAdmin, myWallet.Address);
-                await ConfirmTrn(myWallet, hash);
-
-                bRet = await wfm.HasRole(RoleTyp.RootAdmin, myWallet.Address);
-                Console.WriteLine($"Root Admin Role Granted: {bRet}");
-
-                bRet = await wfm.HasRole(RoleTyp.ContractAdmin, myWallet.Address);
-                Console.WriteLine($"Contract Admin Role Granted: {bRet}");
-                Console.WriteLine();
-
-                if (bRet)
-                    throw new Exception("Unexpected Role Granted");
-            }
-
             Console.WriteLine("==========================================");
             Console.WriteLine("AddWFManagerRoles Success!");
             Console.WriteLine();
         }
 
+        static async Task RemoveWFBuilderRoles(WFWallet myWallet)
+        {
+            WFBuilderAccess wfb = new WFBuilderAccess(myWallet);
+
+            Console.WriteLine("=========================");
+            Console.WriteLine("Removing WF Builder Roles");
+            Console.WriteLine("=========================");
+            Console.WriteLine("Revoking Contract Admin Role to Self...");
+            string hash = await wfb.RevokeRole(RoleTyp.ContractAdmin, myWallet.Address);
+            Console.WriteLine($"Revoked OK: {hash}");
+            await TraceTransaction(myWallet, hash);
+            await ConfirmTrn(myWallet, hash);
+
+            bool bRet = await wfb.HasRole(RoleTyp.RootAdmin, myWallet.Address);
+            Console.WriteLine($"Root Admin Role Granted: {bRet}");
+
+            bRet = await wfb.HasRole(RoleTyp.ContractAdmin, myWallet.Address);
+            Console.WriteLine($"Contract Admin Role Granted: {bRet}");
+            Console.WriteLine();
+
+            if (bRet)
+                throw new Exception("Unexpected Role Granted");
+
+            Console.WriteLine("==========================================");
+            Console.WriteLine("RemoveWFBuilderRoles Success!");
+            Console.WriteLine();
+        }
+        static async Task RemoveWFManagerRoles(WFWallet myWallet)
+        {
+            WFManagerAccess wfm = new WFManagerAccess(myWallet);
+
+            Console.WriteLine("=========================");
+            Console.WriteLine("Removing WF Manager Roles");
+            Console.WriteLine("=========================");
+            Console.WriteLine("Revoking Contract Admin Role to Self...");
+
+            string hash = await wfm.RevokeRole(RoleTyp.ContractAdmin, myWallet.Address);
+            await ConfirmTrn(myWallet, hash);
+
+            bool bRet = await wfm.HasRole(RoleTyp.RootAdmin, myWallet.Address);
+            Console.WriteLine($"Root Admin Role Granted: {bRet}");
+
+            bRet = await wfm.HasRole(RoleTyp.ContractAdmin, myWallet.Address);
+            Console.WriteLine($"Contract Admin Role Granted: {bRet}");
+            Console.WriteLine();
+
+            if (bRet)
+                throw new Exception("Unexpected Role Granted");
+
+            Console.WriteLine("==========================================");
+            Console.WriteLine("RemoveWFManagerRoles Success!");
+            Console.WriteLine();
+        }
+
         static async Task AddWFBuilderRights(WFWallet myWallet)
         {
-            Console.WriteLine("==================");
-            Console.WriteLine("AddWFBuilderRights");
-            Console.WriteLine("==================");
+            Console.WriteLine("=====================");
+            Console.WriteLine("Add WF Builder Rights");
+            Console.WriteLine("=====================");
 
             //Assigning ourselves rights on every State Engine Edge
             WFBuilder wfb = new WFBuilder(myWallet);
@@ -417,9 +533,9 @@ namespace WFTest
         }
         static async Task RemoveWFBuilderRights(WFWallet myWallet)
         {
-            Console.WriteLine("=====================");
-            Console.WriteLine("RemoveWFBuilderRights");
-            Console.WriteLine("=====================");
+            Console.WriteLine("========================");
+            Console.WriteLine("Remove WF Builder Rights");
+            Console.WriteLine("========================");
 
             //Removing our rights from every State Engine Edge
             WFBuilder wfb = new WFBuilder(myWallet);
@@ -465,6 +581,10 @@ namespace WFTest
 
         static async Task ShowWFBuilder(WFWallet myWallet)
         {
+            Console.WriteLine("==============");
+            Console.WriteLine("Get WF Builder");
+            Console.WriteLine("==============");
+
             WFBuilder wfb = new WFBuilder(myWallet);
 
             BigInteger usn = await wfb.GetUSN();
@@ -509,9 +629,6 @@ namespace WFTest
             Console.WriteLine("Participants:");
             List<string> participants = await wfb.GetParticipants();
 
-            if (participants.Count != 1)
-                throw new Exception($"Unexpected # of participants: {participants.Count} instead of 3!");
-
             foreach (string user in participants)
                 Console.WriteLine($"{user}");
 
@@ -522,6 +639,10 @@ namespace WFTest
 
         static async Task ShowWFManager(WFWallet myWallet)
         {
+            Console.WriteLine("==============");
+            Console.WriteLine("Get WF Manager");
+            Console.WriteLine("==============");
+
             WFManager wfm = new WFManager(myWallet);
 
             uint totalWF = await wfm.GetTotalOpenWFs();
@@ -560,6 +681,10 @@ namespace WFTest
 
         static async Task NewWF(WFWallet myWallet)
         {
+            Console.WriteLine("===============");
+            Console.WriteLine("Creating New WF");
+            Console.WriteLine("===============");
+
             DocSet[] docs = new DocSet[] {  new DocSet { loLimit = 1, hiLimit = 1, flags = (uint)WFFlags.REQUIRED },
                                             new DocSet { loLimit = 1, hiLimit = 2, flags = (uint)WFFlags.REQUIRED },
                                             new DocSet { loLimit = 1, hiLimit = 2, flags = 0 },
@@ -568,6 +693,7 @@ namespace WFTest
             BigInteger gasPrice = 30 * BigInteger.Pow(10, 9);
             BigInteger balanceBefore = await myWallet.CheckFunds(null);
 
+            Console.WriteLine("Adding new WF...");
             WFManager wfm = new WFManager(myWallet);
             Tuple<string, string> newWf = await wfm.AddWF(docs, gasPrice);
             if (newWf?.Item1 == null)
@@ -599,6 +725,10 @@ namespace WFTest
 
         static async Task ShowWorkflow(WFWallet myWallet, string addr)
         {
+            Console.WriteLine("=============");
+            Console.WriteLine("Workflow Dump");
+            Console.WriteLine("=============");
+
             Workflow wf = new Workflow(myWallet, addr);
 
             uint state = await wf.GetState();
@@ -654,66 +784,98 @@ namespace WFTest
 
         static async Task RunWorkflow(WFWallet myWallet, string addr)
         {
+            Console.WriteLine("================");
+            Console.WriteLine("Running Workflow");
+            Console.WriteLine("================");
+
             Workflow wf = new Workflow(myWallet, addr);
 
             BigInteger[] ids = new BigInteger[] { wf.MakeDocId(0, 0x1000), wf.MakeDocId(1, 0x1001) };
             BigInteger[] content = new BigInteger[] { 0x111, 0x112 };
 
-            string hash = await wf.DoInit(0, 1, ids, content);
+            uint usn = await wf.GetUSN();
+            uint state = await wf.GetState();
+            string hash = null;
+
+            //If WF is in a running state just abort it!
+            if (state != 0)
+            {
+                Console.WriteLine("Aborting...");
+                hash = await wf.DoAbort(usn++, 5);
+                await ConfirmTrn(myWallet, hash);
+                return;
+            }
+
+            //WF NOT Running, take it for a run....
+            Console.WriteLine("Init...");
+            hash = await wf.DoInit(usn++, 1, ids, content);
             await ConfirmTrn(myWallet, hash);
 
-            hash = await wf.DoApprove(1, 2);
+            Console.WriteLine("Approve...");
+            hash = await wf.DoApprove(usn++, 2);
             await ConfirmTrn(myWallet, hash);
 
-            hash = await wf.DoApprove(2, 3);
+            Console.WriteLine("Approve...");
+            hash = await wf.DoApprove(usn++, 3);
             await ConfirmTrn(myWallet, hash);
 
-            hash = await wf.DoApprove(3, 2);
+            Console.WriteLine("Approve...");
+            hash = await wf.DoApprove(usn++, 2);
             await ConfirmTrn(myWallet, hash);
 
             BigInteger[] idsRemove = new BigInteger[] { wf.MakeDocId(1, 0x1001) };
             BigInteger[] idsAdd = new BigInteger[] { wf.MakeDocId(1, 0x2000), wf.MakeDocId(1, 0x2001) };
             BigInteger[] contentAdd = new BigInteger[] { 0xA111, 0xA112 };
-            hash = await wf.DoReview(4, idsRemove, idsAdd, contentAdd);
+            Console.WriteLine("Review...");
+            hash = await wf.DoReview(usn++, idsRemove, idsAdd, contentAdd);
             await ConfirmTrn(myWallet, hash);
 
             idsRemove = new BigInteger[0];
             idsAdd = new BigInteger[] { wf.MakeDocId(2, 0x333) };
             contentAdd = new BigInteger[] { 0x333 };
-            hash = await wf.DoReview(5, idsRemove, idsAdd, contentAdd);
+            Console.WriteLine("Review...");
+            hash = await wf.DoReview(usn++, idsRemove, idsAdd, contentAdd);
             await ConfirmTrn(myWallet, hash);
 
             idsAdd = new BigInteger[] { wf.MakeDocId(3, 0x444), wf.MakeDocId(3, 0x555) };
             contentAdd = new BigInteger[] { 0x444, 0x555 };
-            hash = await wf.DoReview(6, idsRemove, idsAdd, contentAdd);
+            Console.WriteLine("Review...");
+            hash = await wf.DoReview(usn++, idsRemove, idsAdd, contentAdd);
             await ConfirmTrn(myWallet, hash);
 
             idsRemove = new BigInteger[] { wf.MakeDocId(2, 0x333), wf.MakeDocId(1, 0x2001) };
             idsAdd = new BigInteger[0];
             contentAdd = new BigInteger[0];
-            hash = await wf.DoReview(7, idsRemove, idsAdd, contentAdd);
+            Console.WriteLine("Review...");
+            hash = await wf.DoReview(usn++, idsRemove, idsAdd, contentAdd);
             await ConfirmTrn(myWallet, hash);
 
-            hash = await wf.DoApprove(8, 3);
+            Console.WriteLine("Approve...");
+            hash = await wf.DoApprove(usn++, 3);
             await ConfirmTrn(myWallet, hash);
 
-            hash = await wf.DoSignoff(9, 4);
+            Console.WriteLine("Sign-off...");
+            hash = await wf.DoSignoff(usn++, 4);
             await ConfirmTrn(myWallet, hash);
         }
 
-        static async Task RunFirstWF(WFWallet myWallet)
+        static async Task RunLastWF(WFWallet myWallet)
         {
+            Console.WriteLine("=====================");
+            Console.WriteLine("Running Last Workflow");
+            Console.WriteLine("=====================");
+
             WFManager wfm = new WFManager(myWallet);
-            ReadWFOutput read = await wfm.ReadWFs(0, 1);
-            if (read.addrList.Count != 1)
+            ReadWFOutput read = await wfm.ReadWFs(0, 0);
+            if (read.addrList.Count == 0)
             {
                 Console.WriteLine("No Open Workflows found!");
                 return;
             }
 
-            await ShowWorkflow(myWallet, read.addrList[0]);
-            await RunWorkflow(myWallet, read.addrList[0]);
-            await ShowWorkflow(myWallet, read.addrList[0]);
+            await ShowWorkflow(myWallet, read.addrList[read.addrList.Count - 1]);
+            await RunWorkflow(myWallet, read.addrList[read.addrList.Count - 1]);
+            await ShowWorkflow(myWallet, read.addrList[read.addrList.Count - 1]);
         }
     }
 
