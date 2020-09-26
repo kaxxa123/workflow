@@ -128,7 +128,8 @@ namespace WFApi
                 return (BigInteger)fee;
 
             Transaction trn = await wallet.W3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(sHash);
-            return trn.Gas.Value * trn.GasPrice.Value;
+            TransactionReceipt recpt = await wallet.W3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(sHash);
+            return recpt.GasUsed.Value * trn.GasPrice.Value;
         }
 
         //Observe the blockchain for mined blocks
