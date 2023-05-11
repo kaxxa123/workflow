@@ -18,15 +18,6 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
 
 1. For each state identify the set of connected states and call the ``WorkflowBuilder`` as shown. The order of these calls is important, as each appends a new state:
 
-    <style type="text/css">
-    .tg  {border-collapse:collapse;border-spacing:0;}
-    .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-    overflow:hidden;padding:2px 5px;word-break:normal;}
-    .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-    font-weight:normal;overflow:hidden;padding:2px 5px;word-break:normal;}
-    .tg .tg-ri3q{background-color:#333333;border-color:inherit;color:#ffffff;font-weight:bold;text-align:left;vertical-align:top}
-    .tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
-    </style>
     <table class="tg">
     <thead>
     <tr>
@@ -50,7 +41,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
-        <td class="tg-0pky">   <br>addState([1])   </td>
+        <td class="tg-0pky">   <br><code>addState([1])</code>   </td>
     </tr>
     <tr>
         <td class="tg-0pky">   <br>S1   </td>
@@ -58,7 +49,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
-        <td class="tg-0pky">   <br>addState([2])   </td>
+        <td class="tg-0pky">   <br><code>addState([2])</code>  </td>
     </tr>
     <tr>
         <td class="tg-0pky">   <br>S2   </td>
@@ -66,7 +57,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
-        <td class="tg-0pky">   <br>addState([3])   </td>
+        <td class="tg-0pky">   <br><code>addState([3])</code>  </td>
     </tr>
     <tr>
         <td class="tg-0pky">   <br>S3   </td>
@@ -74,7 +65,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
         <td class="tg-0pky">   <br>S2   </td>
         <td class="tg-0pky">   <br>S3   </td>
         <td class="tg-0pky">   <br>S4   </td>
-        <td class="tg-0pky">   <br>addState([1,2,3,4])   </td>
+        <td class="tg-0pky">   <br><code>addState([1,2,3,4])</code>   </td>
     </tr>
     <tr>
         <td class="tg-0pky">   <br>S4   </td>
@@ -82,7 +73,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
         <td class="tg-0pky">   <br>    </td>
-        <td class="tg-0pky">   <br>addState([])   </td>
+        <td class="tg-0pky">   <br><code>addState([])</code>   </td>
     </tr>
     </tbody>
     </table>
@@ -140,14 +131,7 @@ Here are the steps for creating a workflow through calls against the ``WorkflowB
 
     <li>
     <p><code>WorkflowBuilder</code> enforces these validation rules over rights:</p>
-    <style type="text/css">
-    .tg  {border-collapse:collapse;border-spacing:0;}
-    .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-    overflow:hidden;padding:0px 5px;word-break:normal;}
-    .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-    font-weight:normal;overflow:hidden;padding:0px 5px;word-break:normal;}
-    .tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
-    </style>
+
     <table class="tg">
     <tbody>
     <tr>
