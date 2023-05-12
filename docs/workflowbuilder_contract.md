@@ -1,5 +1,8 @@
 # Creating a Workflow – WorkflowBuilder Contract
 
+| [Home](../README.md) |
+------------------------
+
 ``WorkflowBuilder`` allows us to create a workflow state engine definition. It does not concern itself with any business logic. It is like a dumb data structure whose rules must be enforced by some other contract.
 
 The metadata is made up of:

@@ -1,5 +1,8 @@
 # Creating a Workflow Instance – Workflow Contract
 
+| [Home](../README.md) |
+------------------------
+
 The ``Workflow`` smart contract keeps track of a specific WF instance. This is initialized with the WF definition created using ``WorkflowBuilder`` and the Document Set: <BR />
 ``constructor (IStateEngine eng, uint256[] memory docs)``
 
