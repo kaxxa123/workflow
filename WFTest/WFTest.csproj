@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WFAPI" Version="1.0.0" />
+    <ProjectReference Include="..\WFAPI\WFAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
