@@ -7,6 +7,8 @@ __Being a prototype, this code was NOT gas optimized and NOT code reviewed__. Th
 
 ---
 
+1. [Clone, Configure, Build, Deploy](./docs/build.md)
+
 1. [Motivation and High-Level Design](./docs/high_level_design.md)
 
 1. [Defining a Workflow – WorkflowBuilder Contract](./docs/workflowbuilder_contract.md)
